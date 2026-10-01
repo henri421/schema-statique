@@ -1,0 +1,2031 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Schema statique</title>
+<style>
+:root {
+  --fond: #f7f7f6;
+  --surface: #ffffff;
+  --surface-appui: #f2f1ec;
+  --texte: #1a1a1a;
+  --texte-doux: #4a4842;
+  --texte-faible: #6a6862;
+  --bordure: #c8c6c0;
+  --bordure-douce: #eceae4;
+  --accent: #1e5aa8;
+  --accent-doux: #eaf1f9;
+  --compression: #2f5d8a;
+  --traction: #a8442a;
+  --beton: #e7eaee;
+  --neutre: #9a978f;
+  --ok: #1f6f3f;      --ok-fond: #eaf4ee;
+  --alerte: #8a6d00;  --alerte-fond: #fdf6e3;
+  --refus: #a52121;   --refus-fond: #f8ecec;
+  --sans: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --rayon: 4px;
+  --rayon-petit: 3px;
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+body {
+  font-family: var(--sans);
+  color: var(--texte);
+  background: var(--fond);
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  font-size: 14px;
+}
+header {
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  padding: 8px 14px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--bordure);
+}
+header h1 {
+  font-size: 15px; font-weight: 600; margin: 0 10px 0 0;
+  letter-spacing: 0.01em;
+}
+header .groupe { display: flex; gap: 6px; }
+button, select, input {
+  font-family: inherit; font-size: 13px; color: var(--texte);
+}
+.bouton {
+  background: var(--surface); border: 1px solid var(--bordure);
+  border-radius: var(--rayon); padding: 5px 10px; cursor: pointer;
+}
+.bouton:hover { background: var(--surface-appui); }
+.bouton:active { background: var(--bordure-douce); }
+.bouton.principal { background: var(--accent); border-color: var(--accent); color: #fff; }
+.bouton.principal:hover { filter: brightness(1.08); }
+main { display: grid; grid-template-columns: 112px 1fr 268px; min-height: 0; }
+#rail {
+  background: var(--surface); border-right: 1px solid var(--bordure);
+  padding: 8px; display: flex; flex-direction: column; gap: 4px; overflow: auto;
+}
+.outil {
+  display: flex; align-items: center; gap: 8px;
+  width: 100%; text-align: left; cursor: pointer;
+  background: transparent; border: 1px solid transparent;
+  border-radius: var(--rayon); padding: 6px 7px;
+}
+.outil:hover { background: var(--surface-appui); }
+.outil[aria-pressed="true"] { background: var(--accent-doux); border-color: var(--accent); color: var(--accent); }
+.outil svg { flex: 0 0 18px; }
+.outil .touche { margin-left: auto; font-family: var(--mono); font-size: 10px; color: var(--texte-faible); }
+#zone { position: relative; min-width: 0; background: var(--fond); overflow: hidden; }
+#toile { display: block; touch-action: none; cursor: crosshair; }
+#toile.main { cursor: default; }
+#zoom {
+  position: absolute; right: 12px; bottom: 12px; display: flex; gap: 4px;
+  background: var(--surface); border: 1px solid var(--bordure); border-radius: var(--rayon); padding: 3px;
+}
+#zoom button { border: none; background: transparent; cursor: pointer; padding: 3px 8px; border-radius: var(--rayon-petit); }
+#zoom button:hover { background: var(--surface-appui); }
+#panneau {
+  background: var(--surface); border-left: 1px solid var(--bordure);
+  overflow: auto; padding: 10px 12px 28px;
+}
+#panneau h2 {
+  font-size: 12px; font-weight: 600; color: var(--texte-doux);
+  margin: 14px 0 8px; padding-bottom: 5px; border-bottom: 1px solid var(--bordure-douce);
+}
+#panneau h2:first-child { margin-top: 2px; }
+.ligne { display: grid; grid-template-columns: 94px 1fr; align-items: center; gap: 8px; margin-bottom: 7px; }
+.ligne label { color: var(--texte-doux); font-size: 12.5px; }
+.ligne input[type=text], .ligne input[type=number], .ligne select {
+  width: 100%; padding: 4px 6px; border: 1px solid var(--bordure);
+  border-radius: var(--rayon-petit); background: var(--surface);
+}
+.ligne input[type=number] { font-family: var(--mono); }
+.ligne input[type=color] { width: 36px; height: 26px; padding: 1px; border: 1px solid var(--bordure); border-radius: var(--rayon-petit); background: var(--surface); }
+.ligne input[type=checkbox] { justify-self: start; width: 16px; height: 16px; }
+.actions { display: flex; gap: 6px; margin-top: 10px; flex-wrap: wrap; }
+.aide { color: var(--texte-faible); font-size: 12px; line-height: 1.5; margin: 6px 0 0; }
+.tableau-charges { display: grid; grid-template-columns: 1fr 54px 54px 40px; gap: 4px 5px; align-items: center; }
+.tableau-charges input { width: 100%; min-width: 0; padding: 3px 5px; border: 1px solid var(--bordure); border-radius: var(--rayon-petit); background: var(--surface); }
+.tableau-charges input[type=number] { font-family: var(--mono); }
+.tableau-charges input.large { grid-column: span 2; }
+.tableau-charges span { font-family: var(--mono); font-size: 11.5px; color: var(--texte-faible); }
+.ligne-modele { display: flex; gap: 6px; margin-bottom: 7px; }
+.ligne-modele input, .ligne-modele select { flex: 1; min-width: 0; padding: 4px 6px; border: 1px solid var(--bordure); border-radius: var(--rayon-petit); background: var(--surface); }
+.vide { color: var(--texte-faible); font-size: 12.5px; line-height: 1.5; }
+footer {
+  display: flex; gap: 18px; align-items: center;
+  padding: 5px 14px; background: var(--surface); border-top: 1px solid var(--bordure);
+  font-size: 12px; color: var(--texte-faible);
+}
+footer .coord { font-family: var(--mono); }
+@media (max-width: 860px) {
+  main { grid-template-columns: 1fr; grid-template-rows: auto 1fr auto; }
+  #rail { flex-direction: row; flex-wrap: wrap; border-right: none; border-bottom: 1px solid var(--bordure); }
+  .outil { width: auto; }
+  .outil .touche, .outil span.nom { display: none; }
+  #panneau { border-left: none; border-top: 1px solid var(--bordure); max-height: 42vh; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Schema statique</h1>
+  <div class="groupe">
+    <button class="bouton" id="b-nouveau">Nouveau</button>
+    <button class="bouton" id="b-ouvrir">Ouvrir</button>
+    <button class="bouton" id="b-enregistrer">Enregistrer</button>
+  </div>
+  <div class="groupe">
+    <button class="bouton" id="b-svg">Exporter SVG</button>
+    <button class="bouton" id="b-png">Exporter PNG</button>
+  </div>
+  <div class="groupe">
+    <button class="bouton" id="b-annuler" title="Ctrl+Z">Annuler</button>
+    <button class="bouton" id="b-retablir" title="Ctrl+Y">Retablir</button>
+  </div>
+  <input type="file" id="fichier" accept="application/json" hidden>
+</header>
+
+<main>
+  <nav id="rail"></nav>
+  <div id="zone">
+    <svg id="toile" xmlns="http://www.w3.org/2000/svg"></svg>
+    <div id="zoom">
+      <button id="z-moins" title="Zoom arriere">&minus;</button>
+      <button id="z-ajuster" title="Ajuster a la fenetre">Ajuster</button>
+      <button id="z-plus" title="Zoom avant">+</button>
+    </div>
+  </div>
+  <aside id="panneau"></aside>
+</main>
+
+<footer>
+  <span class="coord" id="pos">x = 0,00 m   y = 0,00 m</span>
+  <span id="indice"></span>
+</footer>
+
+<script>
+'use strict';
+
+/* ------------------------------------------------------------------ *
+ *  Schema statique : editeur de schemas de calcul (poutres, portiques)
+ *  Longueurs en metres, charges en kN et kN/m, angles en degres.
+ *  Aucune dependance externe, aucun envoi reseau : tout reste local.
+ * ------------------------------------------------------------------ */
+
+/* ---------------------------- palette ---------------------------- */
+
+const COULEURS = {
+  structure: '#1a1a1a',
+  appui: '#1a1a1a',
+  charge: '#a8442a',
+  cote: '#1e5aa8',
+  texte: '#1a1a1a',
+  texteDoux: '#4a4842',
+  grille: '#e4e3de',
+  axe: '#d2d0ca',
+  selection: '#1e5aa8',
+  apercu: '#9a978f'
+};
+
+/* ---------------------------- modele ----------------------------- */
+
+function modeleVide() {
+  return {
+    noeuds: [], barres: [], appuis: [], charges: [], cotes: [], textes: [],
+    prochain: 1
+  };
+}
+
+let etat = modeleVide();
+let vue = { k: 70, ox: 120, oy: 400 };
+let outil = 'select';
+let sel = null;                       // { genre, id }
+let enCours = null;                   // point de depart du trace en cours
+let curseur = { x: 0, y: 0 };         // position modele du curseur
+let glisse = null;                    // etat de glissement en cours
+let pile = [], pileRefaire = [];
+
+const reglages = {
+  pas: 0.25, grille: true, aimant: true,
+  typeAppui: 'double',
+  valeurPonctuelle: 10, anglePonctuelle: -90,
+  valeurRepartie: 5, orientationRepartie: 'verticale',
+  valeurMoment: 10,
+  decimales: 2
+};
+
+function nid() { return etat.prochain++; }
+function noeud(id) { return etat.noeuds.find(n => n.id === id); }
+function barre(id) { return etat.barres.find(b => b.id === id); }
+
+/* --------------------------- utilitaires -------------------------- */
+
+function nombre(v, dec) {
+  const d = dec === undefined ? reglages.decimales : dec;
+  if (v === null || v === undefined || isNaN(v)) return '';
+  let s = Number(v).toFixed(d);
+  if (s.indexOf('.') >= 0) s = s.replace(/0+$/, '').replace(/\.$/, '');
+  return s.replace('.', ',');
+}
+
+function ecran(x, y) { return [vue.ox + x * vue.k, vue.oy - y * vue.k]; }
+function versModele(sx, sy) { return [(sx - vue.ox) / vue.k, (vue.oy - sy) / vue.k]; }
+
+function arrondiPas(v) {
+  if (!reglages.aimant) return v;
+  const p = reglages.pas > 0 ? reglages.pas : 0.01;
+  return Math.round(v / p) * p;
+}
+
+function echappe(s) {
+  return String(s === undefined || s === null ? '' : s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+function distanceSegment(px, py, ax, ay, bx, by) {
+  const dx = bx - ax, dy = by - ay;
+  const l2 = dx * dx + dy * dy;
+  if (l2 === 0) return Math.hypot(px - ax, py - ay);
+  let t = ((px - ax) * dx + (py - ay) * dy) / l2;
+  t = Math.max(0, Math.min(1, t));
+  return Math.hypot(px - (ax + t * dx), py - (ay + t * dy));
+}
+
+function memoriser() {
+  pile.push(JSON.stringify(etat));
+  if (pile.length > 60) pile.shift();
+  pileRefaire.length = 0;
+}
+
+function annuler() {
+  if (!pile.length) return;
+  pileRefaire.push(JSON.stringify(etat));
+  etat = JSON.parse(pile.pop());
+  sel = null; enCours = null;
+  dessiner(); construirePanneau(); sauverLocal();
+}
+
+function retablir() {
+  if (!pileRefaire.length) return;
+  pile.push(JSON.stringify(etat));
+  etat = JSON.parse(pileRefaire.pop());
+  sel = null; enCours = null;
+  dessiner(); construirePanneau(); sauverLocal();
+}
+
+function sauverLocal() {
+  try { localStorage.setItem('schema-statique:auto', JSON.stringify(etat)); } catch (e) { /* stockage indisponible */ }
+}
+
+function chargerLocal() {
+  try {
+    const s = localStorage.getItem('schema-statique:auto');
+    if (!s) return false;
+    const d = JSON.parse(s);
+    if (!d || !Array.isArray(d.noeuds)) return false;
+    etat = Object.assign(modeleVide(), d);
+    return etat.noeuds.length > 0;
+  } catch (e) { return false; }
+}
+
+/* ------------------------ creation d'entites ---------------------- */
+
+function noeudPres(x, y, tolPx) {
+  const tol = (tolPx === undefined ? 12 : tolPx) / vue.k;
+  let meilleur = null, dm = Infinity;
+  for (const n of etat.noeuds) {
+    const d = Math.hypot(n.x - x, n.y - y);
+    if (d < tol && d < dm) { dm = d; meilleur = n; }
+  }
+  return meilleur;
+}
+
+function accroche(x, y) {
+  const n = noeudPres(x, y);
+  if (n) return { x: n.x, y: n.y, noeud: n };
+  return { x: arrondiPas(x), y: arrondiPas(y), noeud: null };
+}
+
+function obtenirNoeud(x, y) {
+  const n = noeudPres(x, y, 8);
+  if (n) return n;
+  const nouveau = { id: nid(), x: x, y: y };
+  etat.noeuds.push(nouveau);
+  return nouveau;
+}
+
+function creerBarre(a, b) {
+  if (a.id === b.id) return null;
+  const existe = etat.barres.some(m =>
+    (m.a === a.id && m.b === b.id) || (m.a === b.id && m.b === a.id));
+  if (existe) return null;
+  const m = {
+    id: nid(), a: a.id, b: b.id, couleur: COULEURS.structure,
+    epaisseur: 2.4, trait: 'continu', etiquette: ''
+  };
+  etat.barres.push(m);
+  return m;
+}
+
+function supprimerSelection() {
+  if (!sel) return;
+  memoriser();
+  const { genre, id } = sel;
+  if (genre === 'noeud') {
+    etat.noeuds = etat.noeuds.filter(n => n.id !== id);
+    etat.barres = etat.barres.filter(b => b.a !== id && b.b !== id);
+    etat.appuis = etat.appuis.filter(a => a.noeud !== id);
+    etat.charges = etat.charges.filter(c => c.noeud !== id);
+    etat.cotes = etat.cotes.filter(c => c.na !== id && c.nb !== id);
+  } else if (genre === 'barre') {
+    etat.barres = etat.barres.filter(b => b.id !== id);
+    etat.charges = etat.charges.filter(c => c.barre !== id);
+  } else if (genre === 'appui') {
+    etat.appuis = etat.appuis.filter(a => a.id !== id);
+  } else if (genre === 'charge') {
+    etat.charges = etat.charges.filter(c => c.id !== id);
+  } else if (genre === 'cote') {
+    etat.cotes = etat.cotes.filter(c => c.id !== id);
+  } else if (genre === 'texte') {
+    etat.textes = etat.textes.filter(t => t.id !== id);
+  }
+  sel = null;
+  dessiner(); construirePanneau(); sauverLocal();
+}
+
+function objetSelectionne() {
+  if (!sel) return null;
+  const tables = {
+    noeud: etat.noeuds, barre: etat.barres, appui: etat.appuis,
+    charge: etat.charges, cote: etat.cotes, texte: etat.textes
+  };
+  const t = tables[sel.genre];
+  return t ? t.find(o => o.id === sel.id) || null : null;
+}
+
+/* ----------------------- geometrie des entites -------------------- */
+
+function pointCharge(c) {
+  if (c.noeud !== undefined && c.noeud !== null) {
+    const n = noeud(c.noeud);
+    return n ? { x: n.x, y: n.y } : null;
+  }
+  if (c.barre !== undefined && c.barre !== null) {
+    const m = barre(c.barre);
+    if (!m) return null;
+    const a = noeud(m.a), b = noeud(m.b);
+    if (!a || !b) return null;
+    const t = c.t === undefined ? 0.5 : c.t;
+    return { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t };
+  }
+  return null;
+}
+
+function pointsCote(c) {
+  const a = c.na !== null && c.na !== undefined ? noeud(c.na) : null;
+  const b = c.nb !== null && c.nb !== undefined ? noeud(c.nb) : null;
+  return {
+    ax: a ? a.x : c.ax, ay: a ? a.y : c.ay,
+    bx: b ? b.x : c.bx, by: b ? b.y : c.by
+  };
+}
+
+function texteCote(c) {
+  if (c.texte) return c.texte;
+  const p = pointsCote(c);
+  const dx = p.bx - p.ax, dy = p.by - p.ay;
+  const l = c.direction === 'h' ? Math.abs(dx)
+    : c.direction === 'v' ? Math.abs(dy) : Math.hypot(dx, dy);
+  return nombre(l) + ' m';
+}
+
+function libelle(o, uniteDefaut) {
+  const nom = o.etiquette ? String(o.etiquette) : '';
+  const val = (o.valeur === '' || o.valeur === null || o.valeur === undefined || isNaN(o.valeur))
+    ? '' : nombre(o.valeur) + ' ' + (o.unite || uniteDefaut);
+  if (nom && val) return nom + ' = ' + val;
+  return nom || val;
+}
+
+/* ----------------------------- rendu ------------------------------ */
+
+// decalage libre de l etiquette (px ecran) ; a l ecran seulement, une poignee pour la saisir
+function attrEtiquette(o, p, genre) {
+  return (o.lx || o.ly ? ' transform="translate(' + (o.lx || 0) + ' ' + (o.ly || 0) + ')"' : '') +
+    (p.interactif ? ' data-etiquette="' + genre + ':' + o.id + '" style="cursor:move"' : '');
+}
+
+// direction ecran ou s ecarte le diagramme d une charge repartie (vers l origine des fleches)
+function sensRepartie(c, ax, ay, bx, by) {
+  if (c.orientation === 'perp') {
+    const ux = bx - ax, uy = by - ay, l = Math.hypot(ux, uy) || 1;
+    let nx = -uy / l, ny = ux / l;
+    if (ny > 0) { nx = -nx; ny = -ny; }
+    return [nx, ny];
+  }
+  if (c.orientation === 'horizontale') return [-1, 0];
+  return [0, -1];
+}
+
+function fleche(x, y, angleDeg, longueur, couleur, epaisseur) {
+  // pointe en (x, y), fut oriente selon angleDeg (repere ecran, degres)
+  const a = angleDeg * Math.PI / 180;
+  const qx = x - Math.cos(a) * longueur, qy = y - Math.sin(a) * longueur;
+  const t = 4.2 + epaisseur;
+  const p1x = x - Math.cos(a) * t * 2.2 + Math.cos(a + Math.PI / 2) * t;
+  const p1y = y - Math.sin(a) * t * 2.2 + Math.sin(a + Math.PI / 2) * t;
+  const p2x = x - Math.cos(a) * t * 2.2 - Math.cos(a + Math.PI / 2) * t;
+  const p2y = y - Math.sin(a) * t * 2.2 - Math.sin(a + Math.PI / 2) * t;
+  return '<line x1="' + qx.toFixed(1) + '" y1="' + qy.toFixed(1) + '" x2="' + x.toFixed(1) +
+    '" y2="' + y.toFixed(1) + '" stroke="' + couleur + '" stroke-width="' + epaisseur + '"/>' +
+    '<polygon points="' + x.toFixed(1) + ',' + y.toFixed(1) + ' ' + p1x.toFixed(1) + ',' + p1y.toFixed(1) +
+    ' ' + p2x.toFixed(1) + ',' + p2y.toFixed(1) + '" fill="' + couleur + '"/>';
+}
+
+function hachures(cx, cy, demi, angleDeg, couleur) {
+  const a = angleDeg * Math.PI / 180;
+  const ux = Math.cos(a), uy = Math.sin(a);
+  const nx = -uy, ny = ux;
+  let s = '<line x1="' + (cx - ux * demi).toFixed(1) + '" y1="' + (cy - uy * demi).toFixed(1) +
+    '" x2="' + (cx + ux * demi).toFixed(1) + '" y2="' + (cy + uy * demi).toFixed(1) +
+    '" stroke="' + couleur + '" stroke-width="1.6"/>';
+  const n = 6, pas = (2 * demi) / (n - 1), lg = 7;
+  for (let i = 0; i < n; i++) {
+    const px = cx - ux * demi + ux * pas * i, py = cy - uy * demi + uy * pas * i;
+    s += '<line x1="' + px.toFixed(1) + '" y1="' + py.toFixed(1) +
+      '" x2="' + (px + nx * lg - ux * lg).toFixed(1) + '" y2="' + (py + ny * lg - uy * lg).toFixed(1) +
+      '" stroke="' + couleur + '" stroke-width="1"/>';
+  }
+  return s;
+}
+
+function dessinAppui(a, p) {
+  const n = noeud(a.noeud);
+  if (!n) return '';
+  const [sx, sy] = p.ecran(n.x, n.y);
+  const ang = (a.angle || 0);
+  const couleur = a.couleur || COULEURS.appui;
+  const h = 16, demi = 13;
+  const r = 'rotate(' + ang + ' ' + sx.toFixed(1) + ' ' + sy.toFixed(1) + ')';
+  let g = '<g transform="' + r + '">';
+  if (a.type === 'simple' || a.type === 'double') {
+    g += '<polygon points="' + sx.toFixed(1) + ',' + sy.toFixed(1) + ' ' +
+      (sx - demi).toFixed(1) + ',' + (sy + h).toFixed(1) + ' ' +
+      (sx + demi).toFixed(1) + ',' + (sy + h).toFixed(1) +
+      '" fill="none" stroke="' + couleur + '" stroke-width="1.6" stroke-linejoin="round"/>';
+    if (a.type === 'simple') {
+      g += '<circle cx="' + (sx - 7).toFixed(1) + '" cy="' + (sy + h + 4).toFixed(1) + '" r="3.6" fill="none" stroke="' + couleur + '" stroke-width="1.3"/>';
+      g += '<circle cx="' + (sx + 7).toFixed(1) + '" cy="' + (sy + h + 4).toFixed(1) + '" r="3.6" fill="none" stroke="' + couleur + '" stroke-width="1.3"/>';
+      g += hachures(sx, sy + h + 8.5, demi + 2, 0, couleur);
+    } else {
+      g += hachures(sx, sy + h, demi + 2, 0, couleur);
+    }
+  } else if (a.type === 'encastrement') {
+    g += hachures(sx, sy, demi + 4, 0, couleur);
+  } else if (a.type === 'ressort') {
+    let d = 'M ' + sx.toFixed(1) + ' ' + sy.toFixed(1);
+    for (let i = 0; i < 6; i++) {
+      d += ' l ' + (i % 2 === 0 ? 7 : -7) + ' 4';
+    }
+    d += ' l 0 4';
+    g += '<path d="' + d + '" fill="none" stroke="' + couleur + '" stroke-width="1.5"/>';
+    g += hachures(sx, sy + 28, demi, 0, couleur);
+  } else if (a.type === 'rotule') {
+    g += '<circle cx="' + sx.toFixed(1) + '" cy="' + sy.toFixed(1) + '" r="5" fill="#ffffff" stroke="' + couleur + '" stroke-width="1.6"/>';
+  }
+  g += '</g>';
+  return g;
+}
+
+function dessinChargePonctuelle(c, p) {
+  const pt = pointCharge(c);
+  if (!pt) return '';
+  const [sx, sy] = p.ecran(pt.x, pt.y);
+  const couleur = c.couleur || COULEURS.charge;
+  const ang = -(c.angle === undefined ? -90 : c.angle);  // repere ecran : y vers le bas
+  const lg = c.longueur || 48;
+  let g = fleche(sx, sy, ang, lg, couleur, c.epaisseur || 1.8);
+  const a = ang * Math.PI / 180;
+  const tx = sx - Math.cos(a) * (lg + 8), ty = sy - Math.sin(a) * (lg + 8);
+  const txt = libelle(c, 'kN');
+  if (txt) {
+    const ancre = Math.abs(Math.cos(a)) < 0.4 ? 'middle' : (Math.cos(a) > 0 ? 'end' : 'start');
+    const dy = Math.abs(Math.cos(a)) < 0.4 ? (Math.sin(a) > 0 ? 12 : -3) : 4;
+    g += '<text' + attrEtiquette(c, p, 'charge') + ' x="' + tx.toFixed(1) + '" y="' + (ty + dy).toFixed(1) + '" text-anchor="' + ancre +
+      '" font-family="system-ui, sans-serif" font-size="13" fill="' + couleur + '">' + echappe(txt) + '</text>';
+  }
+  return g;
+}
+
+function dessinChargeRepartie(c, p) {
+  const m = barre(c.barre);
+  if (!m) return '';
+  const a = noeud(m.a), b = noeud(m.b);
+  if (!a || !b) return '';
+  const t1 = c.t1 === undefined ? 0 : c.t1;
+  const t2 = c.t2 === undefined ? 1 : c.t2;
+  const A = { x: a.x + (b.x - a.x) * t1, y: a.y + (b.y - a.y) * t1 };
+  const B = { x: a.x + (b.x - a.x) * t2, y: a.y + (b.y - a.y) * t2 };
+  let [ax, ay] = p.ecran(A.x, A.y);
+  let [bx, by] = p.ecran(B.x, B.y);
+  const couleur = c.couleur || COULEURS.charge;
+  const w1 = c.w1 === undefined ? 5 : c.w1;
+  const w2 = c.w2 === undefined ? w1 : c.w2;
+  const maxi = Math.max(Math.abs(w1), Math.abs(w2)) || 1;
+  const hMax = c.hauteur || 30;
+  const h1 = (w1 / maxi) * hMax, h2 = (w2 / maxi) * hMax;
+
+  const [dx, dy] = sensRepartie(c, ax, ay, bx, by);
+  // pied du diagramme ecarte de la barre, pour empiler G et Q sans les superposer
+  const base = c.base || 0;
+  ax += dx * base; ay += dy * base; bx += dx * base; by += dy * base;
+
+  const p1x = ax + dx * h1, p1y = ay + dy * h1;
+  const p2x = bx + dx * h2, p2y = by + dy * h2;
+  let g = '<polygon points="' + ax.toFixed(1) + ',' + ay.toFixed(1) + ' ' + p1x.toFixed(1) + ',' + p1y.toFixed(1) +
+    ' ' + p2x.toFixed(1) + ',' + p2y.toFixed(1) + ' ' + bx.toFixed(1) + ',' + by.toFixed(1) +
+    '" fill="' + couleur + '" fill-opacity="' + (c.remplissage === undefined ? 0.1 : c.remplissage) +
+    '" stroke="' + couleur + '" stroke-width="1.4"/>';
+
+  const lg = Math.hypot(bx - ax, by - ay);
+  const n = Math.max(2, Math.min(14, Math.round(lg / 34) + 1));
+  const angle = Math.atan2(-dy, -dx) * 180 / Math.PI;
+  for (let i = 0; i < n; i++) {
+    const s = i / (n - 1);
+    const qx = ax + (bx - ax) * s, qy = ay + (by - ay) * s;
+    const hh = h1 + (h2 - h1) * s;
+    if (Math.abs(hh) < 4) continue;
+    g += fleche(qx, qy, angle, Math.abs(hh), couleur, 1.1);
+  }
+  const txt = libelle(Object.assign({}, c, { valeur: c.valeur === undefined || c.valeur === '' ? (w1 === w2 ? w1 : '') : c.valeur }), 'kN/m');
+  if (txt) {
+    // charge laterale : etiquette rangee a cote du diagramme plutot que centree dessus
+    const lateral = Math.abs(dx) > Math.abs(dy);
+    const mx = (lateral ? (dx < 0 ? Math.min(p1x, p2x) : Math.max(p1x, p2x)) : (p1x + p2x) / 2) + dx * 8;
+    const my = (p1y + p2y) / 2 + dy * 12;
+    g += '<text' + attrEtiquette(c, p, 'charge') + ' x="' + mx.toFixed(1) + '" y="' + (my + (lateral ? 4 : dy < 0 ? -2 : 13)).toFixed(1) +
+      '" text-anchor="' + (lateral ? (dx < 0 ? 'end' : 'start') : 'middle') + '" font-family="system-ui, sans-serif" font-size="13" fill="' + couleur + '">' +
+      echappe(txt) + '</text>';
+  }
+  return g;
+}
+
+function dessinMoment(c, p) {
+  const pt = pointCharge(c);
+  if (!pt) return '';
+  const [sx, sy] = p.ecran(pt.x, pt.y);
+  const couleur = c.couleur || COULEURS.charge;
+  const r = c.rayon || 20;
+  const horaire = c.sens !== 'antihoraire';
+  const a0 = horaire ? 140 : 40, a1 = horaire ? 400 : 300;
+  const x0 = sx + r * Math.cos(a0 * Math.PI / 180), y0 = sy + r * Math.sin(a0 * Math.PI / 180);
+  const x1 = sx + r * Math.cos(a1 * Math.PI / 180), y1 = sy + r * Math.sin(a1 * Math.PI / 180);
+  let g = '<path d="M ' + x0.toFixed(1) + ' ' + y0.toFixed(1) + ' A ' + r + ' ' + r + ' 0 1 ' +
+    (horaire ? 1 : 0) + ' ' + x1.toFixed(1) + ' ' + y1.toFixed(1) +
+    '" fill="none" stroke="' + couleur + '" stroke-width="1.8"/>';
+  const tang = a1 + (horaire ? 90 : -90);
+  g += fleche(x1, y1, tang, 1, couleur, 1.8);
+  const txt = libelle(c, 'kN.m');
+  if (txt) {
+    g += '<text' + attrEtiquette(c, p, 'charge') + ' x="' + (sx + r + 6).toFixed(1) + '" y="' + (sy - r + 2).toFixed(1) +
+      '" font-family="system-ui, sans-serif" font-size="13" fill="' + couleur + '">' + echappe(txt) + '</text>';
+  }
+  return g;
+}
+
+function dessinCote(c, p) {
+  const g0 = pointsCote(c);
+  const [ax, ay] = p.ecran(g0.ax, g0.ay);
+  const [bx, by] = p.ecran(g0.bx, g0.by);
+  const couleur = c.couleur || COULEURS.cote;
+  const d = c.decalage === undefined ? 50 : c.decalage;
+  let x1, y1, x2, y2;
+  if (c.direction === 'h') {
+    const yy = Math.max(ay, by) + d;
+    x1 = ax; y1 = yy; x2 = bx; y2 = yy;
+  } else if (c.direction === 'v') {
+    const xx = Math.min(ax, bx) - d;
+    x1 = xx; y1 = ay; x2 = xx; y2 = by;
+  } else {
+    const ux = bx - ax, uy = by - ay, l = Math.hypot(ux, uy) || 1;
+    const nx = -uy / l, ny = ux / l;
+    x1 = ax + nx * d; y1 = ay + ny * d; x2 = bx + nx * d; y2 = by + ny * d;
+  }
+  let g = '<line x1="' + ax.toFixed(1) + '" y1="' + ay.toFixed(1) + '" x2="' + x1.toFixed(1) + '" y2="' + y1.toFixed(1) +
+    '" stroke="' + couleur + '" stroke-width="0.7" stroke-dasharray="3 3"/>' +
+    '<line x1="' + bx.toFixed(1) + '" y1="' + by.toFixed(1) + '" x2="' + x2.toFixed(1) + '" y2="' + y2.toFixed(1) +
+    '" stroke="' + couleur + '" stroke-width="0.7" stroke-dasharray="3 3"/>' +
+    '<line x1="' + x1.toFixed(1) + '" y1="' + y1.toFixed(1) + '" x2="' + x2.toFixed(1) + '" y2="' + y2.toFixed(1) +
+    '" stroke="' + couleur + '" stroke-width="1"/>';
+  const ux = x2 - x1, uy = y2 - y1, l = Math.hypot(ux, uy) || 1;
+  const tx = ux / l * 5, ty = uy / l * 5;
+  for (const q of [[x1, y1], [x2, y2]]) {
+    g += '<line x1="' + (q[0] - tx - ty).toFixed(1) + '" y1="' + (q[1] - ty + tx).toFixed(1) +
+      '" x2="' + (q[0] + tx + ty).toFixed(1) + '" y2="' + (q[1] + ty - tx).toFixed(1) +
+      '" stroke="' + couleur + '" stroke-width="1.2"/>';
+  }
+  const mx = (x1 + x2) / 2, my = (y1 + y2) / 2;
+  const vertical = c.direction === 'v' || Math.abs(uy) > Math.abs(ux);
+  const rot = vertical ? ' transform="rotate(-90 ' + mx.toFixed(1) + ' ' + my.toFixed(1) + ')"' : '';
+  g += '<text x="' + mx.toFixed(1) + '" y="' + (my - 5).toFixed(1) + '" text-anchor="middle"' + rot +
+    ' font-family="system-ui, sans-serif" font-size="12.5" fill="' + couleur + '">' + echappe(texteCote(c)) + '</text>';
+  return g;
+}
+
+function dessinTexte(t, p) {
+  const [sx, sy] = p.ecran(t.x, t.y);
+  return '<text x="' + sx.toFixed(1) + '" y="' + sy.toFixed(1) + '" text-anchor="' + (t.ancrage || 'start') +
+    '" font-family="system-ui, sans-serif" font-size="' + (t.taille || 14) + '" font-weight="' + (t.gras ? 600 : 400) +
+    '" fill="' + (t.couleur || COULEURS.texte) + '">' + echappe(t.texte) + '</text>';
+}
+
+function dessinBarre(m, p) {
+  const a = noeud(m.a), b = noeud(m.b);
+  if (!a || !b) return '';
+  const [ax, ay] = p.ecran(a.x, a.y);
+  const [bx, by] = p.ecran(b.x, b.y);
+  const tirets = m.trait === 'tirets' ? ' stroke-dasharray="9 5"' :
+    m.trait === 'mixte' ? ' stroke-dasharray="12 4 2 4"' : '';
+  let g = '<line x1="' + ax.toFixed(1) + '" y1="' + ay.toFixed(1) + '" x2="' + bx.toFixed(1) + '" y2="' + by.toFixed(1) +
+    '" stroke="' + (m.couleur || COULEURS.structure) + '" stroke-width="' + (m.epaisseur || 2.4) +
+    '" stroke-linecap="round"' + tirets + '/>';
+  if (m.etiquette) {
+    const mx = (ax + bx) / 2, my = (ay + by) / 2;
+    const ux = bx - ax, uy = by - ay, l = Math.hypot(ux, uy) || 1;
+    const nx = -uy / l, ny = ux / l;
+    const s = ny > 0 ? -1 : 1;
+    g += '<text' + attrEtiquette(m, p, 'barre') + ' x="' + (mx + nx * 13 * s).toFixed(1) + '" y="' + (my + ny * 13 * s + 4).toFixed(1) +
+      '" text-anchor="middle" font-family="system-ui, sans-serif" font-size="13" font-style="italic" fill="' +
+      (m.couleur || COULEURS.structure) + '">' + echappe(m.etiquette) + '</text>';
+  }
+  return g;
+}
+
+function construireSVG(p) {
+  let g = '';
+
+  if (p.interactif && reglages.grille) {
+    const pas = reglages.pas * vue.k;
+    if (pas > 6) {
+      const x0 = vue.ox % pas, y0 = vue.oy % pas;
+      let lignes = '';
+      for (let x = x0; x < p.largeur; x += pas) {
+        lignes += '<line x1="' + x.toFixed(1) + '" y1="0" x2="' + x.toFixed(1) + '" y2="' + p.hauteur + '"/>';
+      }
+      for (let y = y0; y < p.hauteur; y += pas) {
+        lignes += '<line x1="0" y1="' + y.toFixed(1) + '" x2="' + p.largeur + '" y2="' + y.toFixed(1) + '"/>';
+      }
+      g += '<g stroke="' + COULEURS.grille + '" stroke-width="1">' + lignes + '</g>';
+    }
+    g += '<line x1="0" y1="' + vue.oy.toFixed(1) + '" x2="' + p.largeur + '" y2="' + vue.oy.toFixed(1) +
+      '" stroke="' + COULEURS.axe + '" stroke-width="1"/>' +
+      '<line x1="' + vue.ox.toFixed(1) + '" y1="0" x2="' + vue.ox.toFixed(1) + '" y2="' + p.hauteur +
+      '" stroke="' + COULEURS.axe + '" stroke-width="1"/>';
+  }
+
+  for (const c of etat.cotes) g += dessinCote(c, p);
+  for (const m of etat.barres) g += dessinBarre(m, p);
+  for (const a of etat.appuis) g += dessinAppui(a, p);
+  for (const c of etat.charges) {
+    if (c.genre === 'ponctuelle') g += dessinChargePonctuelle(c, p);
+    else if (c.genre === 'repartie') g += dessinChargeRepartie(c, p);
+    else if (c.genre === 'moment') g += dessinMoment(c, p);
+  }
+  for (const t of etat.textes) g += dessinTexte(t, p);
+
+  if (p.interactif) {
+    for (const n of etat.noeuds) {
+      const [sx, sy] = p.ecran(n.x, n.y);
+      g += '<circle cx="' + sx.toFixed(1) + '" cy="' + sy.toFixed(1) + '" r="3.2" fill="' +
+        COULEURS.structure + '"/>';
+    }
+    if (enCours) {
+      const [ax, ay] = p.ecran(enCours.x, enCours.y);
+      const [bx, by] = p.ecran(curseur.x, curseur.y);
+      g += '<line x1="' + ax.toFixed(1) + '" y1="' + ay.toFixed(1) + '" x2="' + bx.toFixed(1) + '" y2="' + by.toFixed(1) +
+        '" stroke="' + COULEURS.apercu + '" stroke-width="1.6" stroke-dasharray="6 4"/>';
+    }
+    const o = objetSelectionne();
+    if (o) g += contourSelection(o, p);
+  }
+  return g;
+}
+
+function contourSelection(o, p) {
+  const c = COULEURS.selection;
+  const cadre = (x, y, r) => '<circle cx="' + x.toFixed(1) + '" cy="' + y.toFixed(1) + '" r="' + r +
+    '" fill="none" stroke="' + c + '" stroke-width="1.4" stroke-dasharray="4 3"/>';
+  if (sel.genre === 'noeud') { const [x, y] = p.ecran(o.x, o.y); return cadre(x, y, 9); }
+  if (sel.genre === 'barre') {
+    const a = noeud(o.a), b = noeud(o.b);
+    if (!a || !b) return '';
+    const [ax, ay] = p.ecran(a.x, a.y), [bx, by] = p.ecran(b.x, b.y);
+    return '<line x1="' + ax.toFixed(1) + '" y1="' + ay.toFixed(1) + '" x2="' + bx.toFixed(1) + '" y2="' + by.toFixed(1) +
+      '" stroke="' + c + '" stroke-width="6" stroke-opacity="0.22" stroke-linecap="round"/>';
+  }
+  if (sel.genre === 'appui') { const n = noeud(o.noeud); if (!n) return ''; const [x, y] = p.ecran(n.x, n.y); return cadre(x, y + 10, 20); }
+  if (sel.genre === 'charge') {
+    if (o.genre === 'repartie') {
+      const m = barre(o.barre); if (!m) return '';
+      const a = noeud(m.a), b = noeud(m.b); if (!a || !b) return '';
+      const [ax, ay] = p.ecran(a.x, a.y), [bx, by] = p.ecran(b.x, b.y);
+      return '<line x1="' + ax.toFixed(1) + '" y1="' + ay.toFixed(1) + '" x2="' + bx.toFixed(1) + '" y2="' + by.toFixed(1) +
+        '" stroke="' + c + '" stroke-width="6" stroke-opacity="0.22"/>';
+    }
+    const pt = pointCharge(o); if (!pt) return '';
+    const [x, y] = p.ecran(pt.x, pt.y);
+    return cadre(x, y, 12);
+  }
+  if (sel.genre === 'cote') {
+    const q = pointsCote(o);
+    const [ax, ay] = p.ecran(q.ax, q.ay), [bx, by] = p.ecran(q.bx, q.by);
+    return cadre((ax + bx) / 2, (ay + by) / 2, 10);
+  }
+  if (sel.genre === 'texte') { const [x, y] = p.ecran(o.x, o.y); return cadre(x, y - 5, 12); }
+  return '';
+}
+
+const toile = document.getElementById('toile');
+
+function dessiner() {
+  const zone = document.getElementById('zone');
+  const l = zone.clientWidth, h = zone.clientHeight;
+  toile.setAttribute('width', l);
+  toile.setAttribute('height', h);
+  toile.innerHTML = construireSVG({ ecran: ecran, interactif: true, largeur: l, hauteur: h });
+  toile.classList.toggle('main', outil === 'select');
+}
+
+/* ------------------------- selection par clic --------------------- */
+
+function toucher(sx, sy) {
+  const pe = { ecran: ecran };
+  // textes
+  for (let i = etat.textes.length - 1; i >= 0; i--) {
+    const t = etat.textes[i];
+    const [x, y] = ecran(t.x, t.y);
+    const w = String(t.texte || '').length * (t.taille || 14) * 0.55;
+    const x0 = t.ancrage === 'middle' ? x - w / 2 : t.ancrage === 'end' ? x - w : x;
+    if (sx > x0 - 4 && sx < x0 + w + 4 && sy > y - (t.taille || 14) - 3 && sy < y + 6)
+      return { genre: 'texte', id: t.id };
+  }
+  // charges
+  for (let i = etat.charges.length - 1; i >= 0; i--) {
+    const c = etat.charges[i];
+    if (c.genre === 'ponctuelle') {
+      const pt = pointCharge(c); if (!pt) continue;
+      const [x, y] = ecran(pt.x, pt.y);
+      const a = -(c.angle === undefined ? -90 : c.angle) * Math.PI / 180;
+      const lg = c.longueur || 48;
+      if (distanceSegment(sx, sy, x, y, x - Math.cos(a) * lg, y - Math.sin(a) * lg) < 9)
+        return { genre: 'charge', id: c.id };
+    } else if (c.genre === 'moment') {
+      const pt = pointCharge(c); if (!pt) continue;
+      const [x, y] = ecran(pt.x, pt.y);
+      const d = Math.hypot(sx - x, sy - y);
+      if (Math.abs(d - (c.rayon || 20)) < 8) return { genre: 'charge', id: c.id };
+    } else if (c.genre === 'repartie') {
+      const m = barre(c.barre); if (!m) continue;
+      const a = noeud(m.a), b = noeud(m.b); if (!a || !b) continue;
+      const [ax, ay] = ecran(a.x, a.y), [bx, by] = ecran(b.x, b.y);
+      const [dx, dy] = sensRepartie(c, ax, ay, bx, by);
+      const h = (c.base || 0) + (c.hauteur || 30);
+      if (distanceSegment(sx, sy, ax + dx * h, ay + dy * h, bx + dx * h, by + dy * h) < 10)
+        return { genre: 'charge', id: c.id };
+    }
+  }
+  // cotes
+  for (let i = etat.cotes.length - 1; i >= 0; i--) {
+    const c = etat.cotes[i];
+    const q = pointsCote(c);
+    const [ax, ay] = ecran(q.ax, q.ay), [bx, by] = ecran(q.bx, q.by);
+    const d = c.decalage === undefined ? 50 : c.decalage;
+    let x1, y1, x2, y2;
+    if (c.direction === 'h') { const yy = Math.max(ay, by) + d; x1 = ax; y1 = yy; x2 = bx; y2 = yy; }
+    else if (c.direction === 'v') { const xx = Math.min(ax, bx) - d; x1 = xx; y1 = ay; x2 = xx; y2 = by; }
+    else {
+      const ux = bx - ax, uy = by - ay, l = Math.hypot(ux, uy) || 1;
+      x1 = ax - uy / l * d; y1 = ay + ux / l * d; x2 = bx - uy / l * d; y2 = by + ux / l * d;
+    }
+    if (distanceSegment(sx, sy, x1, y1, x2, y2) < 9) return { genre: 'cote', id: c.id };
+  }
+  // appuis
+  for (let i = etat.appuis.length - 1; i >= 0; i--) {
+    const a = etat.appuis[i];
+    const n = noeud(a.noeud); if (!n) continue;
+    const [x, y] = ecran(n.x, n.y);
+    if (Math.hypot(sx - x, sy - (y + 12)) < 18) return { genre: 'appui', id: a.id };
+  }
+  // noeuds
+  for (let i = etat.noeuds.length - 1; i >= 0; i--) {
+    const n = etat.noeuds[i];
+    const [x, y] = ecran(n.x, n.y);
+    if (Math.hypot(sx - x, sy - y) < 9) return { genre: 'noeud', id: n.id };
+  }
+  // barres
+  for (let i = etat.barres.length - 1; i >= 0; i--) {
+    const m = etat.barres[i];
+    const a = noeud(m.a), b = noeud(m.b); if (!a || !b) continue;
+    const [ax, ay] = ecran(a.x, a.y), [bx, by] = ecran(b.x, b.y);
+    if (distanceSegment(sx, sy, ax, ay, bx, by) < 8) return { genre: 'barre', id: m.id };
+  }
+  return null;
+}
+
+function parametreSurBarre(m, mx, my) {
+  const a = noeud(m.a), b = noeud(m.b);
+  const dx = b.x - a.x, dy = b.y - a.y;
+  const l2 = dx * dx + dy * dy;
+  if (l2 === 0) return 0;
+  let t = ((mx - a.x) * dx + (my - a.y) * dy) / l2;
+  return Math.max(0, Math.min(1, t));
+}
+
+/* --------------------------- interactions ------------------------- */
+
+function positionLocale(ev) {
+  const r = toile.getBoundingClientRect();
+  return [ev.clientX - r.left, ev.clientY - r.top];
+}
+
+toile.addEventListener('pointerdown', ev => {
+  const [sx, sy] = positionLocale(ev);
+  const [mx, my] = versModele(sx, sy);
+  toile.setPointerCapture(ev.pointerId);
+
+  if (ev.button === 1 || ev.shiftKey && outil === 'select' && !toucher(sx, sy)) {
+    glisse = { mode: 'pan', sx: sx, sy: sy, ox: vue.ox, oy: vue.oy };
+    return;
+  }
+
+  if (outil === 'select') {
+    const poignee = ev.target.closest ? ev.target.closest('[data-etiquette]') : null;
+    if (poignee) {
+      const q = poignee.getAttribute('data-etiquette').split(':');
+      sel = { genre: q[0], id: Number(q[1]) };
+      const o = objetSelectionne();
+      memoriser();
+      glisse = { mode: 'etiquette', sx: sx, sy: sy, lx: o.lx || 0, ly: o.ly || 0 };
+      construirePanneau(); dessiner();
+      return;
+    }
+    const t = toucher(sx, sy);
+    sel = t;
+    construirePanneau();
+    if (t && (t.genre === 'noeud' || t.genre === 'texte' || t.genre === 'cote' || t.genre === 'charge')) {
+      memoriser();
+      glisse = { mode: 'objet', sx: sx, sy: sy, mx: mx, my: my, depart: JSON.parse(JSON.stringify(objetSelectionne())) };
+    } else {
+      glisse = { mode: 'pan', sx: sx, sy: sy, ox: vue.ox, oy: vue.oy };
+    }
+    dessiner();
+    return;
+  }
+
+  if (outil === 'barre') {
+    let pt = accroche(mx, my);
+    if (enCours && ev.shiftKey) pt = contraindre(enCours, pt);
+    if (!enCours) { enCours = { x: pt.x, y: pt.y }; }
+    else {
+      memoriser();
+      const a = obtenirNoeud(enCours.x, enCours.y);
+      const b = obtenirNoeud(pt.x, pt.y);
+      creerBarre(a, b);
+      enCours = { x: pt.x, y: pt.y };
+      sauverLocal();
+    }
+    dessiner();
+    return;
+  }
+
+  if (outil === 'appui') {
+    const n = noeudPres(mx, my, 18);
+    if (!n) { indice('Cliquez sur un noeud pour y poser un appui.'); return; }
+    memoriser();
+    etat.appuis = etat.appuis.filter(a => a.noeud !== n.id);
+    const a = { id: nid(), noeud: n.id, type: reglages.typeAppui, angle: 0, couleur: COULEURS.appui };
+    etat.appuis.push(a);
+    sel = { genre: 'appui', id: a.id };
+    dessiner(); construirePanneau(); sauverLocal();
+    return;
+  }
+
+  if (outil === 'ponctuelle' || outil === 'moment') {
+    const n = noeudPres(mx, my, 16);
+    let c = {
+      id: nid(), genre: outil === 'moment' ? 'moment' : 'ponctuelle',
+      etiquette: '', valeur: outil === 'moment' ? reglages.valeurMoment : reglages.valeurPonctuelle,
+      unite: outil === 'moment' ? 'kN.m' : 'kN', couleur: COULEURS.charge
+    };
+    if (outil === 'ponctuelle') { c.angle = reglages.anglePonctuelle; c.longueur = 48; }
+    else { c.sens = 'horaire'; c.rayon = 20; }
+
+    if (n) {
+      c.noeud = n.id;
+    } else {
+      const t = toucher(sx, sy);
+      if (!t || t.genre !== 'barre') { indice('Cliquez sur un noeud ou sur une barre.'); return; }
+      c.barre = t.id;
+      c.t = parametreSurBarre(barre(t.id), mx, my);
+      // une force posee sur une barre deja chargee part au-dessus du diagramme reparti
+      const deja = etat.charges.filter(q => q.genre === 'repartie' && q.barre === t.id);
+      if (outil === 'ponctuelle' && deja.length) {
+        c.longueur = 48 + Math.max.apply(null, deja.map(q => (q.base || 0) + (q.hauteur || 30)));
+      }
+    }
+    memoriser();
+    etat.charges.push(c);
+    sel = { genre: 'charge', id: c.id };
+    dessiner(); construirePanneau(); sauverLocal();
+    return;
+  }
+
+  if (outil === 'repartie') {
+    const t = toucher(sx, sy);
+    if (!t || t.genre !== 'barre') { indice('Cliquez sur une barre pour y appliquer une charge repartie.'); return; }
+    memoriser();
+    const c = {
+      id: nid(), genre: 'repartie', barre: t.id, t1: 0, t2: 1,
+      w1: reglages.valeurRepartie, w2: reglages.valeurRepartie,
+      orientation: reglages.orientationRepartie, hauteur: 30, remplissage: 0.1,
+      etiquette: '', valeur: reglages.valeurRepartie, unite: 'kN/m', couleur: COULEURS.charge
+    };
+    etat.charges.push(c);
+    sel = { genre: 'charge', id: c.id };
+    dessiner(); construirePanneau(); sauverLocal();
+    return;
+  }
+
+  if (outil === 'cote') {
+    const pt = accroche(mx, my);
+    if (!enCours) { enCours = { x: pt.x, y: pt.y, noeud: pt.noeud ? pt.noeud.id : null }; dessiner(); return; }
+    memoriser();
+    const dx = Math.abs(pt.x - enCours.x), dy = Math.abs(pt.y - enCours.y);
+    const c = {
+      id: nid(), na: enCours.noeud, nb: pt.noeud ? pt.noeud.id : null,
+      ax: enCours.x, ay: enCours.y, bx: pt.x, by: pt.y,
+      direction: dx >= dy ? 'h' : 'v', decalage: 50, texte: '', couleur: COULEURS.cote, auto: false
+    };
+    etat.cotes.push(c);
+    enCours = null;
+    sel = { genre: 'cote', id: c.id };
+    dessiner(); construirePanneau(); sauverLocal();
+    return;
+  }
+
+  if (outil === 'texte') {
+    memoriser();
+    const t = {
+      id: nid(), x: arrondiPas(mx), y: arrondiPas(my), texte: 'Texte',
+      taille: 14, couleur: COULEURS.texte, ancrage: 'start', gras: false
+    };
+    etat.textes.push(t);
+    sel = { genre: 'texte', id: t.id };
+    outil = 'select'; majRail();
+    dessiner(); construirePanneau(); sauverLocal();
+    const champ = document.querySelector('[data-cle="texte"]');
+    if (champ) { champ.focus(); champ.select(); }
+    return;
+  }
+});
+
+function contraindre(depart, pt) {
+  const dx = pt.x - depart.x, dy = pt.y - depart.y;
+  if (Math.abs(dx) > Math.abs(dy) * 2.414) return { x: pt.x, y: depart.y, noeud: null };
+  if (Math.abs(dy) > Math.abs(dx) * 2.414) return { x: depart.x, y: pt.y, noeud: null };
+  const s = Math.sign(dx) * Math.min(Math.abs(dx), Math.abs(dy));
+  const s2 = Math.sign(dy) * Math.min(Math.abs(dx), Math.abs(dy));
+  return { x: depart.x + s, y: depart.y + s2, noeud: null };
+}
+
+toile.addEventListener('pointermove', ev => {
+  const [sx, sy] = positionLocale(ev);
+  const [mx, my] = versModele(sx, sy);
+  curseur = { x: arrondiPas(mx), y: arrondiPas(my) };
+  if (enCours && ev.shiftKey) {
+    const c = contraindre(enCours, curseur);
+    curseur = { x: c.x, y: c.y };
+  }
+  document.getElementById('pos').textContent =
+    'x = ' + nombre(curseur.x) + ' m   y = ' + nombre(curseur.y) + ' m' +
+    (enCours ? '   L = ' + nombre(Math.hypot(curseur.x - enCours.x, curseur.y - enCours.y)) + ' m' : '');
+
+  if (glisse) {
+    if (glisse.mode === 'etiquette') {
+      const o = objetSelectionne();
+      if (o) { o.lx = Math.round(glisse.lx + sx - glisse.sx); o.ly = Math.round(glisse.ly + sy - glisse.sy); dessiner(); }
+    } else if (glisse.mode === 'pan') {
+      vue.ox = glisse.ox + (sx - glisse.sx);
+      vue.oy = glisse.oy + (sy - glisse.sy);
+      dessiner();
+    } else if (glisse.mode === 'objet') {
+      const o = objetSelectionne();
+      if (o) {
+        if (sel.genre === 'noeud') { o.x = arrondiPas(mx); o.y = arrondiPas(my); }
+        else if (sel.genre === 'texte') { o.x = arrondiPas(mx); o.y = arrondiPas(my); }
+        else if (sel.genre === 'cote') {
+          const q = pointsCote(o);
+          const [ax, ay] = ecran(q.ax, q.ay), [bx, by] = ecran(q.bx, q.by);
+          o.decalage = o.direction === 'h' ? Math.max(12, sy - Math.max(ay, by))
+            : o.direction === 'v' ? Math.max(12, Math.min(ax, bx) - sx) : o.decalage;
+        } else if (sel.genre === 'charge') {
+          if (o.genre === 'repartie') {
+            // la barre fixe la position ; le glisser ecarte le diagramme de la barre
+            const m = barre(o.barre), a = noeud(m.a), b = noeud(m.b);
+            const [ax, ay] = ecran(a.x, a.y), [bx, by] = ecran(b.x, b.y);
+            const [dx, dy] = sensRepartie(o, ax, ay, bx, by);
+            const d = (sx - glisse.sx) * dx + (sy - glisse.sy) * dy;
+            o.base = Math.max(0, Math.round((glisse.depart.base || 0) + d));
+          }
+          else if (o.barre !== undefined && o.barre !== null) {
+            o.t = parametreSurBarre(barre(o.barre), mx, my);
+          } else if (o.noeud !== undefined) {
+            const n = noeudPres(mx, my, 20);
+            if (n) o.noeud = n.id;
+          }
+        }
+        dessiner();
+      }
+    }
+    return;
+  }
+  if (enCours) dessiner();
+});
+
+toile.addEventListener('pointerup', ev => {
+  if (glisse && (glisse.mode === 'objet' || glisse.mode === 'etiquette')) { sauverLocal(); construirePanneau(); }
+  glisse = null;
+  try { toile.releasePointerCapture(ev.pointerId); } catch (e) { /* capture deja relachee */ }
+});
+
+toile.addEventListener('dblclick', () => { enCours = null; dessiner(); });
+toile.addEventListener('contextmenu', ev => { ev.preventDefault(); enCours = null; dessiner(); });
+
+toile.addEventListener('wheel', ev => {
+  ev.preventDefault();
+  const [sx, sy] = positionLocale(ev);
+  const [mx, my] = versModele(sx, sy);
+  const f = ev.deltaY < 0 ? 1.12 : 1 / 1.12;
+  vue.k = Math.max(8, Math.min(400, vue.k * f));
+  vue.ox = sx - mx * vue.k;
+  vue.oy = sy + my * vue.k;
+  dessiner();
+}, { passive: false });
+
+document.addEventListener('keydown', ev => {
+  const dansChamp = /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName);
+  if ((ev.ctrlKey || ev.metaKey) && ev.key.toLowerCase() === 'z') { ev.preventDefault(); annuler(); return; }
+  if ((ev.ctrlKey || ev.metaKey) && ev.key.toLowerCase() === 'y') { ev.preventDefault(); retablir(); return; }
+  if (dansChamp) return;
+  if (ev.key === 'Escape') { enCours = null; sel = null; dessiner(); construirePanneau(); return; }
+  if (ev.key === 'Delete' || ev.key === 'Backspace') { ev.preventDefault(); supprimerSelection(); return; }
+  if (sel && /^Arrow/.test(ev.key)) { ev.preventDefault(); pousser(ev.key, ev.shiftKey); return; }
+  const touches = { s: 'select', b: 'barre', a: 'appui', p: 'ponctuelle', r: 'repartie', m: 'moment', c: 'cote', t: 'texte' };
+  const o = touches[ev.key.toLowerCase()];
+  if (o) { outil = o; enCours = null; majRail(); construirePanneau(); dessiner(); }
+});
+
+// deplacement fin au clavier : noeuds et textes au pas de la grille, le reste en pixels
+function pousser(touche, fort) {
+  const o = objetSelectionne();
+  if (!o || sel.genre === 'appui') return;
+  const ux = touche === 'ArrowLeft' ? -1 : touche === 'ArrowRight' ? 1 : 0;
+  const uy = touche === 'ArrowUp' ? -1 : touche === 'ArrowDown' ? 1 : 0;   // repere ecran
+  const px = fort ? 10 : 2;
+  memoriser();
+  if (sel.genre === 'noeud' || sel.genre === 'texte') {
+    const p = (reglages.pas > 0 ? reglages.pas : 0.05) * (fort ? 4 : 1);
+    o.x = Math.round((o.x + ux * p) * 1000) / 1000;
+    o.y = Math.round((o.y - uy * p) * 1000) / 1000;
+  } else if (sel.genre === 'cote') {
+    o.decalage = (o.decalage || 0) + (o.direction === 'v' ? -ux : uy) * px;
+  } else {
+    o.lx = (o.lx || 0) + ux * px; o.ly = (o.ly || 0) + uy * px;
+  }
+  dessiner(); construirePanneau(); sauverLocal();
+}
+
+function indice(txt) { document.getElementById('indice').textContent = txt || ''; }
+
+/* ----------------------------- rail ------------------------------- */
+
+const OUTILS = [
+  { cle: 'select', nom: 'Selection', touche: 'S', icone: 'M4 3 L4 16 L8 12 L11 17 L13 16 L10 11 L15 11 Z' },
+  { cle: 'barre', nom: 'Barre', touche: 'B', icone: 'M3 15 L17 5' },
+  { cle: 'appui', nom: 'Appui', touche: 'A', icone: 'M10 4 L4 14 L16 14 Z M2 17 L18 17' },
+  { cle: 'ponctuelle', nom: 'Force', touche: 'P', icone: 'M10 2 L10 16 M6 12 L10 17 L14 12' },
+  { cle: 'repartie', nom: 'Repartie', touche: 'R', icone: 'M2 3 L18 3 M5 3 L5 11 M10 3 L10 11 M15 3 L15 11 M2 14 L18 14' },
+  { cle: 'moment', nom: 'Moment', touche: 'M', icone: 'M4 10 A6 6 0 1 1 10 16 M10 16 L7 13 M10 16 L13 13' },
+  { cle: 'cote', nom: 'Cote', touche: 'C', icone: 'M3 6 L3 14 M17 6 L17 14 M3 10 L17 10' },
+  { cle: 'texte', nom: 'Texte', touche: 'T', icone: 'M4 5 L16 5 M10 5 L10 16' }
+];
+
+function majRail() {
+  const rail = document.getElementById('rail');
+  rail.innerHTML = OUTILS.map(o =>
+    '<button class="outil" data-outil="' + o.cle + '" aria-pressed="' + (outil === o.cle) + '" title="' + o.nom + ' (' + o.touche + ')">' +
+    '<svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">' +
+    '<path d="' + o.icone + '"/></svg><span class="nom">' + o.nom + '</span><span class="touche">' + o.touche + '</span></button>'
+  ).join('');
+  rail.querySelectorAll('[data-outil]').forEach(b => {
+    b.onclick = () => {
+      outil = b.dataset.outil; enCours = null; sel = null;
+      majRail(); construirePanneau(); dessiner();
+      indice(AIDE[outil] || '');
+    };
+  });
+}
+
+const AIDE = {
+  select: 'Cliquez pour selectionner, glissez pour deplacer, y compris les etiquettes. Fleches : deplacement fin.',
+  barre: 'Cliquez les extremites a la suite. Maj contraint l angle, Echap termine la polyligne.',
+  appui: 'Cliquez un noeud. Le type se choisit a droite.',
+  ponctuelle: 'Cliquez un noeud ou un point d une barre.',
+  repartie: 'Cliquez une barre. Les valeurs w1 et w2 se reglent a droite.',
+  moment: 'Cliquez un noeud.',
+  cote: 'Cliquez deux points. Les noeuds sont accroches, la cote suit alors la geometrie.',
+  texte: 'Cliquez pour poser une annotation.'
+};
+
+/* --------------------------- panneau ------------------------------ */
+
+function ligne(label, html) {
+  return '<div class="ligne"><label>' + label + '</label>' + html + '</div>';
+}
+function champ(type, cle, val, extra) {
+  return '<input type="' + type + '" data-cle="' + cle + '" value="' + echappe(val) + '" ' + (extra || '') + '>';
+}
+function champChoix(cle, val, options) {
+  return '<select data-cle="' + cle + '">' + options.map(o =>
+    '<option value="' + o[0] + '"' + (String(val) === String(o[0]) ? ' selected' : '') + '>' + o[1] + '</option>').join('') + '</select>';
+}
+function champCase(cle, val) {
+  return '<input type="checkbox" data-cle="' + cle + '"' + (val ? ' checked' : '') + '>';
+}
+
+function construirePanneau() {
+  const p = document.getElementById('panneau');
+  let h = '';
+
+  const o = objetSelectionne();
+  h += '<h2>Proprietes</h2>';
+  if (!o) {
+    h += '<p class="vide">Aucune selection. ' + (AIDE[outil] || '') + '</p>';
+  } else if (sel.genre === 'noeud') {
+    h += ligne('x (m)', champ('number', 'x', o.x, 'step="0.05"'));
+    h += ligne('y (m)', champ('number', 'y', o.y, 'step="0.05"'));
+  } else if (sel.genre === 'barre') {
+    h += ligne('Nom', champ('text', 'etiquette', o.etiquette || ''));
+    h += ligne('Couleur', champ('color', 'couleur', o.couleur || COULEURS.structure));
+    h += ligne('Epaisseur', champ('number', 'epaisseur', o.epaisseur || 2.4, 'step="0.2" min="0.4"'));
+    h += ligne('Trait', champChoix('trait', o.trait || 'continu', [['continu', 'Continu'], ['tirets', 'Tirets'], ['mixte', 'Mixte']]));
+  } else if (sel.genre === 'appui') {
+    h += ligne('Type', champChoix('type', o.type, [['double', 'Articule fixe'], ['simple', 'Articule mobile'], ['encastrement', 'Encastrement'], ['ressort', 'Ressort'], ['rotule', 'Rotule interne']]));
+    h += ligne('Rotation', champ('number', 'angle', o.angle || 0, 'step="15"'));
+    h += ligne('Couleur', champ('color', 'couleur', o.couleur || COULEURS.appui));
+  } else if (sel.genre === 'charge' && o.genre === 'ponctuelle') {
+    h += ligne('Nom', champ('text', 'etiquette', o.etiquette || ''));
+    h += ligne('Valeur', champ('number', 'valeur', o.valeur, 'step="0.5"'));
+    h += ligne('Unite', champ('text', 'unite', o.unite || 'kN'));
+    h += ligne('Angle', champ('number', 'angle', o.angle === undefined ? -90 : o.angle, 'step="15"'));
+    if (o.barre !== undefined && o.barre !== null) h += ligne('Position', champ('number', 't', o.t, 'step="0.05" min="0" max="1"'));
+    h += ligne('Longueur', champ('number', 'longueur', o.longueur || 48, 'step="4"'));
+    h += ligne('Couleur', champ('color', 'couleur', o.couleur || COULEURS.charge));
+  } else if (sel.genre === 'charge' && o.genre === 'repartie') {
+    h += ligne('Nom', champ('text', 'etiquette', o.etiquette || ''));
+    h += ligne('w1', champ('number', 'w1', o.w1, 'step="0.5"'));
+    h += ligne('w2', champ('number', 'w2', o.w2, 'step="0.5"'));
+    h += ligne('Valeur', champ('number', 'valeur', o.valeur === undefined ? '' : o.valeur, 'step="0.5"'));
+    h += ligne('Unite', champ('text', 'unite', o.unite || 'kN/m'));
+    h += ligne('Direction', champChoix('orientation', o.orientation, [['verticale', 'Verticale'], ['horizontale', 'Horizontale'], ['perp', 'Perpendiculaire']]));
+    h += ligne('Debut', champ('number', 't1', o.t1, 'step="0.05" min="0" max="1"'));
+    h += ligne('Fin', champ('number', 't2', o.t2, 'step="0.05" min="0" max="1"'));
+    h += ligne('Hauteur', champ('number', 'hauteur', o.hauteur || 30, 'step="2"'));
+    h += ligne('Base', champ('number', 'base', o.base || 0, 'step="2" min="0"'));
+    h += ligne('Remplissage', champ('number', 'remplissage', o.remplissage, 'step="0.05" min="0" max="1"'));
+    h += ligne('Couleur', champ('color', 'couleur', o.couleur || COULEURS.charge));
+  } else if (sel.genre === 'charge' && o.genre === 'moment') {
+    h += ligne('Nom', champ('text', 'etiquette', o.etiquette || ''));
+    h += ligne('Valeur', champ('number', 'valeur', o.valeur, 'step="0.5"'));
+    h += ligne('Unite', champ('text', 'unite', o.unite || 'kN.m'));
+    h += ligne('Sens', champChoix('sens', o.sens, [['horaire', 'Horaire'], ['antihoraire', 'Antihoraire']]));
+    h += ligne('Rayon', champ('number', 'rayon', o.rayon || 20, 'step="2"'));
+    h += ligne('Couleur', champ('color', 'couleur', o.couleur || COULEURS.charge));
+  } else if (sel.genre === 'cote') {
+    h += ligne('Texte', champ('text', 'texte', o.texte || '', 'placeholder="' + echappe(texteCote(o)) + '"'));
+    h += ligne('Direction', champChoix('direction', o.direction, [['h', 'Horizontale'], ['v', 'Verticale'], ['alignee', 'Alignee']]));
+    h += ligne('Decalage', champ('number', 'decalage', o.decalage, 'step="5"'));
+    h += ligne('Couleur', champ('color', 'couleur', o.couleur || COULEURS.cote));
+  } else if (sel.genre === 'texte') {
+    h += ligne('Texte', champ('text', 'texte', o.texte));
+    h += ligne('Taille', champ('number', 'taille', o.taille || 14, 'step="1" min="6"'));
+    h += ligne('Alignement', champChoix('ancrage', o.ancrage || 'start', [['start', 'Gauche'], ['middle', 'Centre'], ['end', 'Droite']]));
+    h += ligne('Gras', champCase('gras', o.gras));
+    h += ligne('Couleur', champ('color', 'couleur', o.couleur || COULEURS.texte));
+  }
+  if (o && (sel.genre === 'charge' || sel.genre === 'barre')) {
+    h += ligne('Etiquette dx', champ('number', 'lx', o.lx || 0, 'step="2"'));
+    h += ligne('Etiquette dy', champ('number', 'ly', o.ly || 0, 'step="2"'));
+  }
+  if (o) h += '<div class="actions"><button class="bouton" id="b-supprimer">Supprimer</button></div>';
+
+  if (outil !== 'select' && !o) {
+    h += '<h2>Reglages de l outil</h2>';
+    if (outil === 'appui') h += ligne('Type', champChoix('r:typeAppui', reglages.typeAppui, [['double', 'Articule fixe'], ['simple', 'Articule mobile'], ['encastrement', 'Encastrement'], ['ressort', 'Ressort'], ['rotule', 'Rotule interne']]));
+    if (outil === 'ponctuelle') {
+      h += ligne('Valeur (kN)', champ('number', 'r:valeurPonctuelle', reglages.valeurPonctuelle, 'step="0.5"'));
+      h += ligne('Angle', champ('number', 'r:anglePonctuelle', reglages.anglePonctuelle, 'step="15"'));
+    }
+    if (outil === 'repartie') {
+      h += ligne('w (kN/m)', champ('number', 'r:valeurRepartie', reglages.valeurRepartie, 'step="0.5"'));
+      h += ligne('Direction', champChoix('r:orientationRepartie', reglages.orientationRepartie, [['verticale', 'Verticale'], ['horizontale', 'Horizontale'], ['perp', 'Perpendiculaire']]));
+    }
+    if (outil === 'moment') h += ligne('Valeur', champ('number', 'r:valeurMoment', reglages.valeurMoment, 'step="0.5"'));
+  }
+
+  h += panneauCharges();
+
+  const cas = CAS.find(c => c.cle === casChoisi) || CAS[0];
+  h += '<h2>Cas pratiques</h2>';
+  h += ligne('Cas', '<select id="c-cas">' + CAS.map(c =>
+    '<option value="' + c.cle + '"' + (c.cle === cas.cle ? ' selected' : '') + '>' + c.nom + '</option>').join('') + '</select>');
+  h += '<p class="aide">' + cas.aide + '</p>';
+  h += '<div class="actions"><button class="bouton principal" id="b-cas">Charger le cas</button></div>';
+
+  const modeles = lireModeles();
+  if (modeleChoisi && !modeles.some(m => m.nom === modeleChoisi)) modeleChoisi = '';
+  if (!modeleChoisi && modeles.length) modeleChoisi = modeles[0].nom;
+  h += '<h2>Mes modeles</h2>';
+  h += '<div class="ligne-modele"><input type="text" id="m-nom" placeholder="Nom du modele" value="' + echappe(modeleChoisi) + '">' +
+    '<button class="bouton" id="b-m-enregistrer">Enregistrer</button></div>';
+  if (modeles.length) {
+    h += '<div class="ligne-modele"><select id="m-liste">' + modeles.map(m =>
+      '<option value="' + echappe(m.nom) + '"' + (m.nom === modeleChoisi ? ' selected' : '') + '>' + echappe(m.nom) +
+      (m.date ? ' (' + m.date + ')' : '') + '</option>').join('') + '</select></div>';
+    h += '<div class="actions"><button class="bouton principal" id="b-m-charger">Charger</button>' +
+      '<button class="bouton" id="b-m-supprimer">Supprimer</button>' +
+      '<button class="bouton" id="b-m-exporter">Exporter la bibliotheque</button></div>';
+  }
+  h += '<p class="aide">Enregistrez un schema pour le reprendre comme point de depart. Les modeles restent dans ce navigateur : ' +
+    'exportez la bibliotheque pour la sauvegarder ; Ouvrir la reimporte.</p>';
+
+  h += '<h2>Modele parametrique</h2>';
+  h += ligne('Type', '<select id="g-type">' +
+    ['poutre:Poutre continue', 'portique:Portique', 'console:Console'].map(s => {
+      const q = s.split(':');
+      return '<option value="' + q[0] + '"' + (generateur.type === q[0] ? ' selected' : '') + '>' + q[1] + '</option>';
+    }).join('') + '</select>');
+  if (generateur.type === 'poutre') {
+    h += ligne('Portees (m)', '<input type="text" id="g-portees" value="' + echappe(generateur.portees) + '">');
+    h += ligne('Console gauche', '<input type="number" id="g-cg" step="0.25" value="' + generateur.consoleG + '">');
+    h += ligne('Console droite', '<input type="number" id="g-cd" step="0.25" value="' + generateur.consoleD + '">');
+    h += ligne('Appui gauche', '<select id="g-ag">' + optionsAppui(generateur.appuiG) + '</select>');
+  } else if (generateur.type === 'portique') {
+    h += ligne('Portee (m)', '<input type="number" id="g-L" step="0.25" value="' + generateur.L + '">');
+    h += ligne('Hauteur (m)', '<input type="number" id="g-H" step="0.25" value="' + generateur.H + '">');
+    h += ligne('Fleche (m)', '<input type="number" id="g-f" step="0.25" value="' + generateur.f + '">');
+    h += ligne('Pieds', '<select id="g-pieds">' + optionsAppui(generateur.pieds) + '</select>');
+  } else {
+    h += ligne('Longueur (m)', '<input type="number" id="g-L" step="0.25" value="' + generateur.L + '">');
+  }
+  h += '<div class="actions"><button class="bouton principal" id="b-generer">Generer</button></div>';
+  h += '<p class="aide">La generation remplace le dessin courant. Annulable par Ctrl+Z.</p>';
+
+  h += '<h2>Cotes et affichage</h2>';
+  h += '<div class="actions"><button class="bouton" id="b-cotes">Coter automatiquement</button>' +
+    '<button class="bouton" id="b-cotes-eff">Effacer ces cotes</button></div>';
+  h += ligne('Pas (m)', champ('number', 'r:pas', reglages.pas, 'step="0.05" min="0.01"'));
+  h += ligne('Aimantation', champCase('r:aimant', reglages.aimant));
+  h += ligne('Grille', champCase('r:grille', reglages.grille));
+  h += ligne('Decimales', champ('number', 'r:decimales', reglages.decimales, 'step="1" min="0" max="4"'));
+
+  p.innerHTML = h;
+  brancherPanneau();
+}
+
+function optionsAppui(val) {
+  return [['double', 'Articule fixe'], ['simple', 'Articule mobile'], ['encastrement', 'Encastrement']]
+    .map(o => '<option value="' + o[0] + '"' + (val === o[0] ? ' selected' : '') + '>' + o[1] + '</option>').join('');
+}
+
+function brancherPanneau() {
+  const p = document.getElementById('panneau');
+  p.querySelectorAll('[data-cle]').forEach(input => {
+    const gerer = () => {
+      const cle = input.dataset.cle;
+      let val = input.type === 'checkbox' ? input.checked :
+        input.type === 'number' ? (input.value === '' ? '' : parseFloat(input.value)) : input.value;
+      if (cle.startsWith('r:')) {
+        reglages[cle.slice(2)] = val;
+        dessiner();
+        return;
+      }
+      const o = objetSelectionne();
+      if (!o) return;
+      o[cle] = val;
+      dessiner(); sauverLocal();
+    };
+    input.addEventListener('input', gerer);
+    input.addEventListener('change', gerer);
+  });
+
+  const sup = document.getElementById('b-supprimer');
+  if (sup) sup.onclick = supprimerSelection;
+
+  brancherCharges(p);
+  const mn = document.getElementById('m-nom');
+  const me = document.getElementById('b-m-enregistrer');
+  if (me) me.onclick = () => enregistrerModele(mn.value);
+  if (mn) mn.onkeydown = ev => { if (ev.key === 'Enter') enregistrerModele(mn.value); };
+  const ml = document.getElementById('m-liste');
+  if (ml) ml.onchange = () => { modeleChoisi = ml.value; mn.value = ml.value; };
+  const mc = document.getElementById('b-m-charger');
+  if (mc) mc.onclick = () => chargerModele(ml.value);
+  const ms = document.getElementById('b-m-supprimer');
+  if (ms) ms.onclick = () => supprimerModele(ml.value);
+  const mx = document.getElementById('b-m-exporter');
+  if (mx) mx.onclick = exporterBibliotheque;
+
+  const cc = document.getElementById('c-cas');
+  if (cc) cc.onchange = () => { casChoisi = cc.value; construirePanneau(); };
+  const bcas = document.getElementById('b-cas');
+  if (bcas) bcas.onclick = () => chargerCas(casChoisi);
+
+  const t = document.getElementById('g-type');
+  if (t) t.onchange = () => { generateur.type = t.value; construirePanneau(); };
+  const g = document.getElementById('b-generer');
+  if (g) g.onclick = () => {
+    lireGenerateur();
+    memoriser();
+    genererModele();
+    ajuster(); construirePanneau(); sauverLocal();
+  };
+  const bc = document.getElementById('b-cotes');
+  if (bc) bc.onclick = () => { memoriser(); coterAutomatiquement(); dessiner(); sauverLocal(); };
+  const bce = document.getElementById('b-cotes-eff');
+  if (bce) bce.onclick = () => {
+    memoriser();
+    etat.cotes = etat.cotes.filter(c => !c.auto);
+    dessiner(); sauverLocal();
+  };
+}
+
+/* ------------------------ modeles types --------------------------- */
+
+const generateur = {
+  type: 'poutre', portees: '6; 5', consoleG: 0, consoleD: 0,
+  appuiG: 'double', L: 8, H: 4, f: 0, pieds: 'encastrement'
+};
+
+function lireGenerateur() {
+  const v = id => { const e = document.getElementById(id); return e ? e.value : null; };
+  if (generateur.type === 'poutre') {
+    generateur.portees = v('g-portees') || generateur.portees;
+    generateur.consoleG = parseFloat(v('g-cg')) || 0;
+    generateur.consoleD = parseFloat(v('g-cd')) || 0;
+    generateur.appuiG = v('g-ag') || generateur.appuiG;
+  } else if (generateur.type === 'portique') {
+    generateur.L = parseFloat(v('g-L')) || generateur.L;
+    generateur.H = parseFloat(v('g-H')) || generateur.H;
+    generateur.f = parseFloat(v('g-f')) || 0;
+    generateur.pieds = v('g-pieds') || generateur.pieds;
+  } else {
+    generateur.L = parseFloat(v('g-L')) || generateur.L;
+  }
+}
+
+function ajouterAppui(n, type) {
+  etat.appuis.push({ id: nid(), noeud: n.id, type: type, angle: 0, couleur: COULEURS.appui });
+}
+
+function genererModele() {
+  etat = modeleVide();
+  sel = null; enCours = null;
+
+  if (generateur.type === 'poutre') {
+    // separateur de travee : point-virgule ou espace. La virgule reste decimale.
+    const portees = String(generateur.portees).split(/[;\s]+/)
+      .map(s => parseFloat(s.trim().replace(',', '.'))).filter(v => v > 0);
+    if (!portees.length) portees.push(6);
+    const xs = [];
+    let x = 0;
+    if (generateur.consoleG > 0) { xs.push(-generateur.consoleG); }
+    xs.push(0);
+    for (const l of portees) { x += l; xs.push(x); }
+    if (generateur.consoleD > 0) xs.push(x + generateur.consoleD);
+    const ns = xs.map(v => { const n = { id: nid(), x: v, y: 0 }; etat.noeuds.push(n); return n; });
+    for (let i = 0; i < ns.length - 1; i++) creerBarre(ns[i], ns[i + 1]);
+    const premier = generateur.consoleG > 0 ? 1 : 0;
+    const dernier = generateur.consoleD > 0 ? ns.length - 2 : ns.length - 1;
+    for (let i = premier; i <= dernier; i++) {
+      ajouterAppui(ns[i], i === premier ? generateur.appuiG : 'simple');
+    }
+  } else if (generateur.type === 'portique') {
+    const L = generateur.L, H = generateur.H, f = generateur.f;
+    const a = { id: nid(), x: 0, y: 0 }, b = { id: nid(), x: 0, y: H };
+    const d = { id: nid(), x: L, y: H }, e = { id: nid(), x: L, y: 0 };
+    etat.noeuds.push(a, b, d, e);
+    creerBarre(a, b);
+    if (f > 0) {
+      const s = { id: nid(), x: L / 2, y: H + f };
+      etat.noeuds.push(s);
+      creerBarre(b, s); creerBarre(s, d);
+    } else {
+      creerBarre(b, d);
+    }
+    creerBarre(d, e);
+    ajouterAppui(a, generateur.pieds);
+    ajouterAppui(e, generateur.pieds);
+  } else {
+    const L = generateur.L;
+    const a = { id: nid(), x: 0, y: 0 }, b = { id: nid(), x: L, y: 0 };
+    etat.noeuds.push(a, b);
+    creerBarre(a, b);
+    etat.appuis.push({ id: nid(), noeud: a.id, type: 'encastrement', angle: 90, couleur: COULEURS.appui });
+  }
+  coterAutomatiquement();
+}
+
+function coterAutomatiquement() {
+  etat.cotes = etat.cotes.filter(c => !c.auto);
+  if (etat.noeuds.length < 2) return;
+  const yMin = Math.min.apply(null, etat.noeuds.map(n => n.y));
+  const xs = [];
+  for (const n of etat.noeuds) {
+    if (Math.abs(n.y - yMin) < 1e-6 && !xs.some(q => Math.abs(q.x - n.x) < 1e-6)) xs.push(n);
+  }
+  xs.sort((p, q) => p.x - q.x);
+  for (let i = 0; i < xs.length - 1; i++) {
+    etat.cotes.push({
+      id: nid(), na: xs[i].id, nb: xs[i + 1].id,
+      ax: xs[i].x, ay: xs[i].y, bx: xs[i + 1].x, by: xs[i + 1].y,
+      direction: 'h', decalage: 56, texte: '', couleur: COULEURS.cote, auto: true
+    });
+  }
+  if (xs.length > 2) {
+    etat.cotes.push({
+      id: nid(), na: xs[0].id, nb: xs[xs.length - 1].id,
+      ax: xs[0].x, ay: xs[0].y, bx: xs[xs.length - 1].x, by: xs[xs.length - 1].y,
+      direction: 'h', decalage: 94, texte: '', couleur: COULEURS.cote, auto: true
+    });
+  }
+  const yMax = Math.max.apply(null, etat.noeuds.map(n => n.y));
+  if (yMax - yMin > 1e-6) {
+    const gauche = etat.noeuds.filter(n => Math.abs(n.x - Math.min.apply(null, etat.noeuds.map(q => q.x))) < 1e-6);
+    gauche.sort((p, q) => p.y - q.y);
+    for (let i = 0; i < gauche.length - 1; i++) {
+      etat.cotes.push({
+        id: nid(), na: gauche[i].id, nb: gauche[i + 1].id,
+        ax: gauche[i].x, ay: gauche[i].y, bx: gauche[i + 1].x, by: gauche[i + 1].y,
+        direction: 'v', decalage: 56, texte: '', couleur: COULEURS.cote, auto: true
+      });
+    }
+  }
+}
+
+/* ------------------------- cas pratiques -------------------------- *
+ *  Schemas complets prets a l emploi. Les valeurs sont indicatives :
+ *  elles illustrent l habillage du schema, elles ne resultent d aucun
+ *  calcul et sont a remplacer par celles de la note.
+ * ------------------------------------------------------------------ */
+
+function cNoeud(x, y) {
+  const n = { id: nid(), x: x, y: y };
+  etat.noeuds.push(n);
+  return n;
+}
+
+function cBarre(a, b, o) {
+  const m = creerBarre(a, b);
+  return Object.assign(m, o || {});
+}
+
+function cAppui(n, type, angle) {
+  etat.appuis.push({ id: nid(), noeud: n.id, type: type, angle: angle || 0, couleur: COULEURS.appui });
+}
+
+function cRepartie(m, w1, w2, o) {
+  const c = Object.assign({
+    id: nid(), genre: 'repartie', barre: m.id, t1: 0, t2: 1, w1: w1, w2: w2,
+    orientation: 'verticale', hauteur: 24, base: 0, remplissage: 0.1,
+    etiquette: '', valeur: w1 === w2 ? w1 : '', unite: 'kN/m', couleur: COULEURS.charge
+  }, o || {});
+  etat.charges.push(c);
+  return c;
+}
+
+// G au pied de la barre, Q empilee au-dessus : la lecture habituelle d une note
+function cGQ(m, g, q, o) {
+  cRepartie(m, g, g, Object.assign({ etiquette: 'G' }, o || {}));
+  cRepartie(m, q, q, Object.assign({ etiquette: 'Q', base: 54 }, o || {}));
+}
+
+// cible : un noeud, ou { barre, t } pour un point courant de barre
+function cForce(cible, valeur, o) {
+  const c = Object.assign({
+    id: nid(), genre: 'ponctuelle', etiquette: '', valeur: valeur, unite: 'kN',
+    angle: -90, longueur: 48, couleur: COULEURS.charge
+  }, o || {});
+  if (cible.barre) {
+    c.barre = cible.barre.id; c.t = cible.t;
+    const deja = etat.charges.filter(q => q.genre === 'repartie' && q.barre === c.barre);
+    if (deja.length && !(o && o.longueur)) {
+      c.longueur = 48 + Math.max.apply(null, deja.map(q => (q.base || 0) + (q.hauteur || 30)));
+    }
+  } else {
+    c.noeud = cible.id;
+  }
+  etat.charges.push(c);
+  return c;
+}
+
+function cMoment(n, valeur, o) {
+  etat.charges.push(Object.assign({
+    id: nid(), genre: 'moment', noeud: n.id, etiquette: '', valeur: valeur, unite: 'kN.m',
+    sens: 'horaire', rayon: 20, couleur: COULEURS.charge
+  }, o || {}));
+}
+
+// a et b : noeuds (la cote suit alors la geometrie) ou simples points { x, y }
+function cCote(a, b, direction, decalage) {
+  etat.cotes.push({
+    id: nid(), na: a.id === undefined ? null : a.id, nb: b.id === undefined ? null : b.id,
+    ax: a.x, ay: a.y, bx: b.x, by: b.y,
+    direction: direction, decalage: decalage, texte: '', couleur: COULEURS.cote, auto: false
+  });
+}
+
+function cTexte(x, y, texte, o) {
+  etat.textes.push(Object.assign({
+    id: nid(), x: x, y: y, texte: texte, taille: 13, couleur: COULEURS.texte, ancrage: 'start', gras: false
+  }, o || {}));
+}
+
+// suite de cotes horizontales sous les noeuds, puis cote totale en second rang
+function cChaineH(ns) {
+  for (let i = 0; i < ns.length - 1; i++) cCote(ns[i], ns[i + 1], 'h', 56);
+  if (ns.length > 2) cCote(ns[0], ns[ns.length - 1], 'h', 94);
+}
+
+function cPoutre(xs) {
+  const ns = xs.map(x => cNoeud(x, 0));
+  const ms = [];
+  for (let i = 0; i < ns.length - 1; i++) ms.push(cBarre(ns[i], ns[i + 1]));
+  return { ns: ns, ms: ms };
+}
+
+const CAS = [
+  {
+    cle: 'solive', nom: 'Poutre isostatique, G et Q',
+    aide: 'Solive ou panne sur deux appuis : charge permanente et exploitation empilees.',
+    construire() {
+      const p = cPoutre([0, 5]);
+      cAppui(p.ns[0], 'double'); cAppui(p.ns[1], 'simple');
+      cGQ(p.ms[0], 2.5, 1.5);
+      cChaineH(p.ns);
+    }
+  },
+  {
+    cle: 'alternance', nom: 'Poutre continue, Q en alternance',
+    aide: 'Trois travees, G partout et Q sur les travees de rive : cas du moment maximal en travee 1 et 3.',
+    construire() {
+      const p = cPoutre([0, 5, 11, 16]);
+      cAppui(p.ns[0], 'double');
+      for (let i = 1; i < 4; i++) cAppui(p.ns[i], 'simple');
+      for (const m of p.ms) cRepartie(m, 8, 8, { etiquette: 'G' });
+      cRepartie(p.ms[0], 5, 5, { etiquette: 'Q', base: 54 });
+      cRepartie(p.ms[2], 5, 5, { etiquette: 'Q', base: 54 });
+      cChaineH(p.ns);
+    }
+  },
+  {
+    cle: 'linteau', nom: 'Linteau sous poteau',
+    aide: 'Charge repartie du mur et descente de charge d un poteau excentre, position cotee.',
+    construire() {
+      const p = cPoutre([0, 4.2]);
+      cAppui(p.ns[0], 'double'); cAppui(p.ns[1], 'simple');
+      cGQ(p.ms[0], 12, 3);
+      cForce({ barre: p.ms[0], t: 1.2 / 4.2 }, 85, { etiquette: 'N_Ed' });
+      cChaineH(p.ns);
+      cCote(p.ns[0], { x: 1.2, y: 0 }, 'h', 94);
+    }
+  },
+  {
+    cle: 'balcon', nom: 'Dalle de balcon en console',
+    aide: 'Console encastree, G et Q par metre de largeur, poussee horizontale sur le garde-corps.',
+    construire() {
+      const a = cNoeud(0, 0), b = cNoeud(1.8, 0), c = cNoeud(1.8, 1.1);
+      const m = cBarre(a, b);
+      cBarre(b, c, { trait: 'tirets', epaisseur: 1.4 });
+      cAppui(a, 'encastrement', 90);
+      // diagrammes bas : la poussee du garde-corps passe au-dessus de leurs etiquettes
+      cRepartie(m, 6.25, 6.25, { etiquette: 'G', hauteur: 12 });
+      cRepartie(m, 3.5, 3.5, { etiquette: 'Q', base: 40, hauteur: 12 });
+      cForce(c, 1, { etiquette: 'H_gc', unite: 'kN/m', angle: 0, longueur: 40 });
+      cCote(a, b, 'h', 56);
+      cCote(b, c, 'v', -40);
+    }
+  },
+  {
+    cle: 'gerber', nom: 'Poutre Gerber',
+    aide: 'Deux travees reliees par une rotule interne placee en travee : structure isostatique.',
+    construire() {
+      const p = cPoutre([0, 8, 9.5, 14]);
+      cAppui(p.ns[0], 'double'); cAppui(p.ns[1], 'simple');
+      cAppui(p.ns[2], 'rotule'); cAppui(p.ns[3], 'simple');
+      for (const m of p.ms) cRepartie(m, 15, 15, m === p.ms[0] ? { etiquette: 'g + q' } : { valeur: null });
+      cChaineH(p.ns);
+    }
+  },
+  {
+    cle: 'escalier', nom: 'Volee d escalier',
+    aide: 'Paillasse inclinee : G le long de la volee, Q en projection horizontale.',
+    construire() {
+      const a = cNoeud(0, 0), b = cNoeud(3.6, 2.4);
+      const m = cBarre(a, b);
+      cAppui(a, 'double'); cAppui(b, 'simple');
+      // la pente releve le bord de l etiquette de G : Q est ecartee davantage
+      cRepartie(m, 7.8, 7.8, { etiquette: 'G' });
+      cRepartie(m, 2.5, 2.5, { etiquette: 'Q', base: 84 });
+      cCote(a, b, 'h', 56);
+      cCote({ x: 3.6, y: 0 }, b, 'v', -56);
+    }
+  },
+  {
+    cle: 'hangar', nom: 'Portique a deux versants',
+    aide: 'Hangar a pieds articules : neige sur les versants, vent en pression et en succion sur les poteaux.',
+    construire() {
+      const a = cNoeud(0, 0), b = cNoeud(0, 6), s = cNoeud(10, 8), d = cNoeud(20, 6), e = cNoeud(20, 0);
+      const p1 = cBarre(a, b), r1 = cBarre(b, s), r2 = cBarre(s, d), p2 = cBarre(d, e);
+      cAppui(a, 'double'); cAppui(e, 'double');
+      cRepartie(r1, 4, 4, { etiquette: 'S' });
+      cRepartie(r2, 4, 4, { valeur: null });
+      cRepartie(p1, 3.6, 3.6, { etiquette: 'W_D', orientation: 'horizontale' });
+      cRepartie(p2, 2.2, 2.2, { etiquette: 'W_E', orientation: 'horizontale' });
+      cCote(a, e, 'h', 56);
+      cCote(e, d, 'v', -56);
+      cCote({ x: 20, y: 6 }, { x: 20, y: 8 }, 'v', -56);
+    }
+  },
+  {
+    cle: 'etages', nom: 'Portique a deux niveaux',
+    aide: 'Ossature encastree en pied : planchers en G et Q, forces horizontales de niveau (vent ou seisme).',
+    construire() {
+      const a = cNoeud(0, 0), b = cNoeud(0, 3.5), c = cNoeud(0, 7);
+      const d = cNoeud(6, 0), e = cNoeud(6, 3.5), f = cNoeud(6, 7);
+      cBarre(a, b); cBarre(b, c); cBarre(d, e); cBarre(e, f);
+      const t1 = cBarre(b, e), t2 = cBarre(c, f);
+      cAppui(a, 'encastrement'); cAppui(d, 'encastrement');
+      cGQ(t1, 22, 12);
+      cGQ(t2, 18, 4);
+      cForce(b, 35, { etiquette: 'H_1', angle: 0 });
+      cForce(c, 50, { etiquette: 'H_2', angle: 0 });
+      cCote(a, d, 'h', 56);
+      cCote(d, e, 'v', -56);
+      cCote(e, f, 'v', -56);
+    }
+  },
+  {
+    cle: 'ferme', nom: 'Ferme a treillis',
+    aide: 'Treillis Pratt a membrures paralleles, charges aux noeuds de la membrure superieure.',
+    construire() {
+      const n = 6, pas = 2, h = 1.5;
+      const bas = [], haut = [];
+      for (let i = 0; i <= n; i++) { bas.push(cNoeud(i * pas, 0)); haut.push(cNoeud(i * pas, h)); }
+      const fin = { epaisseur: 1.8 };
+      for (let i = 0; i < n; i++) { cBarre(bas[i], bas[i + 1], fin); cBarre(haut[i], haut[i + 1], fin); }
+      for (let i = 0; i <= n; i++) cBarre(bas[i], haut[i], fin);
+      // diagonales descendant vers le milieu : tendues sous charge de gravite
+      for (let i = 0; i < n; i++) {
+        if (i < n / 2) cBarre(haut[i], bas[i + 1], fin); else cBarre(bas[i], haut[i + 1], fin);
+      }
+      cAppui(bas[0], 'double'); cAppui(bas[n], 'simple');
+      for (let i = 0; i <= n; i++) cForce(haut[i], i === 0 || i === n ? 6 : 12, { longueur: 40 });
+      cChaineH(bas);
+      cCote(bas[0], haut[0], 'v', 56);
+    }
+  },
+  {
+    cle: 'mur', nom: 'Mur de soutenement',
+    aide: 'Voile encastre en pied : poussee des terres triangulaire et poussee due a la surcharge.',
+    construire() {
+      const a = cNoeud(0, 0), b = cNoeud(0, 4);
+      const m = cBarre(a, b, { epaisseur: 3 });
+      cAppui(a, 'encastrement');
+      // deux diagrammes lateraux cote a cote : etiquettes posees a la main pour ne pas se chevaucher
+      cRepartie(m, 3.3, 3.3, { orientation: 'horizontale', hauteur: 16, valeur: null });
+      cRepartie(m, 24, 0, { orientation: 'horizontale', base: 28, hauteur: 56, valeur: null });
+      cTexte(-0.1, 4.2, 'e_q = 3,3 kN/m', { ancrage: 'middle', couleur: COULEURS.charge });
+      cTexte(-1.15, 0.12, 'e_a = 24 kN/m', { ancrage: 'end', couleur: COULEURS.charge });
+      cTexte(-1.6, 2.6, 'remblai', { taille: 12, couleur: COULEURS.texteDoux });
+      cCote(a, b, 'v', -40);
+    }
+  },
+  {
+    cle: 'poteau', nom: 'Poteau bi-articule',
+    aide: 'Effort normal et moment de tete, tete guidee lateralement : schema de flambement.',
+    construire() {
+      const a = cNoeud(0, 0), b = cNoeud(0, 5);
+      cBarre(a, b, { etiquette: 'l_0' });
+      cAppui(a, 'double'); cAppui(b, 'simple', 90);
+      cForce(b, 850, { etiquette: 'N_Ed' });
+      cMoment(b, 42, { etiquette: 'M_0Ed', rayon: 22 });
+      cCote(a, b, 'v', 70);
+    }
+  },
+  {
+    cle: 'longrine', nom: 'Longrine sur appuis elastiques',
+    aide: 'Poutre de fondation sur pieux modelises en ressorts, descentes de charge des poteaux.',
+    construire() {
+      const p = cPoutre([0, 3.5, 7, 10.5]);
+      for (const n of p.ns) cAppui(n, 'ressort');
+      // etiquette sur la travee centrale, hors de l axe des poteaux
+      for (const m of p.ms) cRepartie(m, 6, 6, m === p.ms[1] ? { etiquette: 'G' } : { valeur: null });
+      cForce({ barre: p.ms[0], t: 0.5 }, 420, { etiquette: 'N_1' });
+      cForce({ barre: p.ms[2], t: 0.5 }, 380, { etiquette: 'N_2' });
+      cChaineH(p.ns);
+      cTexte(-0.4, -0.45, 'k = 80 MN/m', { taille: 12, ancrage: 'end', couleur: COULEURS.texteDoux });
+    }
+  }
+];
+
+let casChoisi = CAS[0].cle;
+
+function chargerCas(cle) {
+  const cas = CAS.find(c => c.cle === cle);
+  if (!cas) return;
+  memoriser();
+  etat = modeleVide();
+  sel = null; enCours = null;
+  cas.construire();
+  ajuster(); construirePanneau(); sauverLocal();
+  indice('Cas charge : ' + cas.nom + '. Valeurs indicatives, a remplacer.');
+}
+
+/* -------------------------- mes modeles --------------------------- *
+ *  Bibliotheque personnelle : le dessin courant s enregistre sous un
+ *  nom et se recharge comme point de depart d un nouveau schema. Elle
+ *  vit dans le stockage du navigateur ; l export JSON la sauvegarde ou
+ *  la transporte, et le bouton Ouvrir la reimporte.
+ * ------------------------------------------------------------------ */
+
+const CLE_MODELES = 'schema-statique:modeles';
+const FORMAT_BIBLIOTHEQUE = 'schema-statique/modeles';
+let modeleChoisi = '';
+
+function lireModeles() {
+  try {
+    const d = JSON.parse(localStorage.getItem(CLE_MODELES) || '[]');
+    return Array.isArray(d) ? d.filter(m => m && m.nom && m.etat && Array.isArray(m.etat.noeuds)) : [];
+  } catch (e) { return []; }
+}
+
+function ecrireModeles(liste) {
+  liste.sort((p, q) => p.nom.localeCompare(q.nom, 'fr'));
+  try {
+    localStorage.setItem(CLE_MODELES, JSON.stringify(liste));
+    return true;
+  } catch (e) {
+    indice('Stockage local indisponible : exportez la bibliotheque pour ne pas perdre ce modele.');
+    return false;
+  }
+}
+
+function enregistrerModele(nom) {
+  nom = String(nom || '').trim();
+  if (!nom) { indice('Donnez un nom au modele.'); return; }
+  if (!etat.noeuds.length) { indice('Le dessin est vide : rien a enregistrer.'); return; }
+  const liste = lireModeles();
+  const i = liste.findIndex(m => m.nom === nom);
+  if (i >= 0 && !confirm('Remplacer le modele « ' + nom + ' » ?')) return;
+  const m = { nom: nom, date: new Date().toISOString().slice(0, 10), etat: JSON.parse(JSON.stringify(etat)) };
+  if (i >= 0) liste[i] = m; else liste.push(m);
+  if (ecrireModeles(liste)) {
+    modeleChoisi = nom;
+    construirePanneau();
+    indice('Modele « ' + nom + ' » enregistre.');
+  }
+}
+
+function chargerModele(nom) {
+  const m = lireModeles().find(q => q.nom === nom);
+  if (!m) return;
+  memoriser();
+  etat = Object.assign(modeleVide(), JSON.parse(JSON.stringify(m.etat)));
+  sel = null; enCours = null;
+  ajuster(); construirePanneau(); sauverLocal();
+  indice('Modele « ' + nom + ' » charge : le modele enregistre reste intact.');
+}
+
+function supprimerModele(nom) {
+  if (!nom || !confirm('Supprimer le modele « ' + nom + ' » de ce navigateur ?')) return;
+  ecrireModeles(lireModeles().filter(m => m.nom !== nom));
+  modeleChoisi = '';
+  construirePanneau();
+}
+
+function exporterBibliotheque() {
+  const liste = lireModeles();
+  if (!liste.length) { indice('Aucun modele a exporter.'); return; }
+  telecharger('modeles-schema.json',
+    JSON.stringify({ format: FORMAT_BIBLIOTHEQUE, modeles: liste }, null, 1), 'application/json');
+}
+
+// fusion par nom : un modele importe remplace celui du meme nom
+function importerBibliotheque(d) {
+  const liste = lireModeles();
+  let n = 0;
+  for (const m of d.modeles) {
+    if (!m || !m.nom || !m.etat || !Array.isArray(m.etat.noeuds)) continue;
+    const i = liste.findIndex(q => q.nom === m.nom);
+    if (i >= 0) liste[i] = m; else liste.push(m);
+    n++;
+  }
+  if (ecrireModeles(liste)) { construirePanneau(); indice(n + ' modele(s) importe(s) dans la bibliotheque.'); }
+}
+
+/* ----------------------- tableau des charges ---------------------- */
+
+function panneauCharges() {
+  if (!etat.charges.length) return '';
+  let h = '<h2>Charges</h2><div class="tableau-charges">';
+  for (const c of etat.charges) {
+    const trapeze = c.genre === 'repartie' && c.w1 !== c.w2;
+    const unite = c.unite || (c.genre === 'repartie' ? 'kN/m' : c.genre === 'moment' ? 'kN.m' : 'kN');
+    h += '<input type="text" data-charge="' + c.id + '" data-champ="etiquette" value="' + echappe(c.etiquette || '') +
+      '" placeholder="' + (c.genre === 'repartie' ? 'repartie' : c.genre) + '">';
+    if (trapeze) {
+      h += '<input type="number" step="0.5" data-charge="' + c.id + '" data-champ="w1" value="' + c.w1 + '" title="w1">' +
+        '<input type="number" step="0.5" data-charge="' + c.id + '" data-champ="w2" value="' + c.w2 + '" title="w2">';
+    } else {
+      const v = c.genre === 'repartie' ? c.w1 : c.valeur;
+      h += '<input class="large" type="number" step="0.5" data-charge="' + c.id + '" data-champ="' +
+        (c.genre === 'repartie' ? 'w' : 'valeur') + '" value="' + echappe(v) + '">';
+    }
+    h += '<span>' + echappe(unite) + '</span>';
+  }
+  return h + '</div><p class="aide">Pour decliner un modele : changez ici noms et valeurs, puis exportez.</p>';
+}
+
+function brancherCharges(p) {
+  p.querySelectorAll('[data-charge]').forEach(input => {
+    input.addEventListener('change', () => {
+      const c = etat.charges.find(q => q.id === Number(input.dataset.charge));
+      if (!c) return;
+      const champ = input.dataset.champ;
+      const v = input.type === 'number' ? parseFloat(input.value) : input.value;
+      if (input.type === 'number' && isNaN(v)) return;
+      memoriser();
+      if (champ === 'w') {
+        c.w1 = v; c.w2 = v;
+        if (c.valeur !== null) c.valeur = v;      // null : etiquette masquee volontairement
+      } else {
+        c[champ] = v;
+      }
+      dessiner(); sauverLocal();
+    });
+  });
+}
+
+/* ------------------------ vue et export --------------------------- */
+
+function boite() {
+  const xs = [], ys = [];
+  for (const n of etat.noeuds) { xs.push(n.x); ys.push(n.y); }
+  for (const t of etat.textes) { xs.push(t.x); ys.push(t.y); }
+  if (!xs.length) return { x0: 0, y0: 0, x1: 10, y1: 5 };
+  return {
+    x0: Math.min.apply(null, xs), x1: Math.max.apply(null, xs),
+    y0: Math.min.apply(null, ys), y1: Math.max.apply(null, ys)
+  };
+}
+
+function ajuster() {
+  const zone = document.getElementById('zone');
+  const b = boite();
+  const dx = Math.max(0.5, b.x1 - b.x0), dy = Math.max(0.5, b.y1 - b.y0);
+  const marge = 150;
+  const k = Math.max(8, Math.min(300,
+    Math.min((zone.clientWidth - marge) / dx, (zone.clientHeight - marge) / dy)));
+  vue.k = k;
+  vue.ox = (zone.clientWidth - dx * k) / 2 - b.x0 * k;
+  vue.oy = (zone.clientHeight + dy * k) / 2 + b.y0 * k;
+  dessiner();
+}
+
+function svgExport() {
+  const b = boite();
+  const k = 80, marge = 130;
+  const l = (b.x1 - b.x0) * k + 2 * marge;
+  const h = (b.y1 - b.y0) * k + 2 * marge;
+  const ox = marge - b.x0 * k;
+  const oy = marge + b.y1 * k;
+  const ecranExport = (x, y) => [ox + x * k, oy - y * k];
+  const corps = construireSVG({ ecran: ecranExport, interactif: false, largeur: l, hauteur: h });
+  // cadrage sur l emprise reelle : etiquettes et diagrammes debordent des noeuds
+  let vx = 0, vy = 0, vl = l, vh = h;
+  try {
+    const t = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    t.setAttribute('style', 'position:absolute;left:-99999px;top:0');
+    t.innerHTML = corps;
+    document.body.appendChild(t);
+    const bb = t.getBBox();
+    t.remove();
+    if (bb.width > 0 && bb.height > 0) {
+      const m = 24;
+      vx = Math.floor(bb.x - m); vy = Math.floor(bb.y - m);
+      vl = Math.ceil(bb.width + 2 * m); vh = Math.ceil(bb.height + 2 * m);
+    }
+  } catch (e) { /* mesure indisponible : cadrage par les noeuds */ }
+  return '<?xml version="1.0" encoding="UTF-8"?>\n' +
+    '<svg xmlns="http://www.w3.org/2000/svg" width="' + Math.round(vl) + '" height="' + Math.round(vh) +
+    '" viewBox="' + Math.round(vx) + ' ' + Math.round(vy) + ' ' + Math.round(vl) + ' ' + Math.round(vh) + '">' +
+    '<rect x="' + Math.round(vx) + '" y="' + Math.round(vy) + '" width="' + Math.round(vl) + '" height="' + Math.round(vh) +
+    '" fill="#ffffff"/>' + corps + '</svg>';
+}
+
+function telecharger(nom, contenu, type) {
+  const blob = contenu instanceof Blob ? contenu : new Blob([contenu], { type: type });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = nom;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+document.getElementById('b-svg').onclick = () => telecharger('schema.svg', svgExport(), 'image/svg+xml');
+
+document.getElementById('b-png').onclick = () => {
+  const texte = svgExport();
+  const img = new Image();
+  const url = URL.createObjectURL(new Blob([texte], { type: 'image/svg+xml;charset=utf-8' }));
+  img.onload = () => {
+    const e = 3;
+    const c = document.createElement('canvas');
+    c.width = img.width * e; c.height = img.height * e;
+    const ctx = c.getContext('2d');
+    ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, c.width, c.height);
+    ctx.drawImage(img, 0, 0, c.width, c.height);
+    URL.revokeObjectURL(url);
+    c.toBlob(b => telecharger('schema.png', b, 'image/png'));
+  };
+  img.onerror = () => { URL.revokeObjectURL(url); indice('Export PNG impossible : utilisez l export SVG.'); };
+  img.src = url;
+};
+
+document.getElementById('b-enregistrer').onclick = () =>
+  telecharger('schema.json', JSON.stringify(etat, null, 1), 'application/json');
+
+document.getElementById('b-ouvrir').onclick = () => document.getElementById('fichier').click();
+
+document.getElementById('fichier').onchange = ev => {
+  const f = ev.target.files[0];
+  if (!f) return;
+  const lecteur = new FileReader();
+  lecteur.onload = () => {
+    try {
+      const d = JSON.parse(lecteur.result);
+      if (d && Array.isArray(d.modeles)) { importerBibliotheque(d); return; }
+      if (!d || !Array.isArray(d.noeuds)) throw new Error('structure inattendue');
+      memoriser();
+      etat = Object.assign(modeleVide(), d);
+      sel = null; ajuster(); construirePanneau(); sauverLocal();
+      indice('Fichier charge.');
+    } catch (e) {
+      indice('Fichier illisible : ' + e.message);
+    }
+  };
+  lecteur.readAsText(f);
+  ev.target.value = '';
+};
+
+document.getElementById('b-nouveau').onclick = () => {
+  memoriser();
+  etat = modeleVide(); sel = null; enCours = null;
+  dessiner(); construirePanneau(); sauverLocal();
+};
+
+document.getElementById('b-annuler').onclick = annuler;
+document.getElementById('b-retablir').onclick = retablir;
+document.getElementById('z-plus').onclick = () => { vue.k = Math.min(400, vue.k * 1.2); dessiner(); };
+document.getElementById('z-moins').onclick = () => { vue.k = Math.max(8, vue.k / 1.2); dessiner(); };
+document.getElementById('z-ajuster').onclick = ajuster;
+
+window.addEventListener('resize', dessiner);
+
+/* ---------------------------- demarrage --------------------------- */
+
+majRail();
+if (!chargerLocal()) {
+  generateur.type = 'poutre';
+  genererModele();
+}
+construirePanneau();
+ajuster();
+indice(AIDE.select);
+</script>
+</body>
+</html>
