@@ -212,7 +212,7 @@ const reglages = {
   pas: 0.25, grille: true, aimant: true,
   typeAppui: 'double',
   valeurPonctuelle: 10, anglePonctuelle: -90,
-  valeurRepartie: 5, orientationRepartie: 'verticale',
+  valeurRepartie: 5, orientationRepartie: 'verticale', formeRepartie: 'uniforme',
   valeurMoment: 10,
   decimales: 2
 };
@@ -427,6 +427,7 @@ function sensRepartie(c, ax, ay, bx, by) {
     return [nx, ny];
   }
   if (c.orientation === 'horizontale') return [-1, 0];
+  if (c.orientation === 'horizontaleD') return [1, 0];
   return [0, -1];
 }
 
@@ -434,7 +435,10 @@ function fleche(x, y, angleDeg, longueur, couleur, epaisseur) {
   // pointe en (x, y), fut oriente selon angleDeg (repere ecran, degres)
   const a = angleDeg * Math.PI / 180;
   const qx = x - Math.cos(a) * longueur, qy = y - Math.sin(a) * longueur;
-  const t = 4.2 + epaisseur;
+  // pointe limitee a 40 % de la fleche : sur un diagramme bas, la tige reste visible.
+  // longueur <= 1 : pointe seule, voulue (bout d arc des moments)
+  const t0 = 4.2 + epaisseur;
+  const t = longueur > 1 ? Math.min(t0, longueur * 0.4 / 2.2) : t0;
   const p1x = x - Math.cos(a) * t * 2.2 + Math.cos(a + Math.PI / 2) * t;
   const p1y = y - Math.sin(a) * t * 2.2 + Math.sin(a + Math.PI / 2) * t;
   const p2x = x - Math.cos(a) * t * 2.2 - Math.cos(a + Math.PI / 2) * t;
@@ -493,6 +497,19 @@ function dessinAppui(a, p) {
     d += ' l 0 4';
     g += '<path d="' + d + '" fill="none" stroke="' + couleur + '" stroke-width="1.5"/>';
     g += hachures(sx, sy + 28, demi, 0, couleur);
+  } else if (a.type === 'ressortRotation') {
+    // articulation fixe retenue en rotation : spirale autour du noeud
+    g += '<polygon points="' + sx.toFixed(1) + ',' + sy.toFixed(1) + ' ' +
+      (sx - demi).toFixed(1) + ',' + (sy + h).toFixed(1) + ' ' + (sx + demi).toFixed(1) + ',' + (sy + h).toFixed(1) +
+      '" fill="none" stroke="' + couleur + '" stroke-width="1.6" stroke-linejoin="round"/>';
+    g += hachures(sx, sy + h, demi + 2, 0, couleur);
+    let d = '';
+    const tours = 1.6 * 2 * Math.PI, fin = -Math.PI / 4;
+    for (let i = 0; i <= 36; i++) {
+      const th = fin - tours + tours * i / 36, r = 4 + 9 * i / 36;
+      d += (i ? ' L ' : 'M ') + (sx + r * Math.cos(th)).toFixed(1) + ' ' + (sy + r * Math.sin(th)).toFixed(1);
+    }
+    g += '<path d="' + d + '" fill="none" stroke="' + couleur + '" stroke-width="1.3"/>';
   } else if (a.type === 'rotule') {
     g += '<circle cx="' + sx.toFixed(1) + '" cy="' + sy.toFixed(1) + '" r="5" fill="#ffffff" stroke="' + couleur + '" stroke-width="1.6"/>';
   }
@@ -513,7 +530,8 @@ function dessinChargePonctuelle(c, p) {
   const txt = libelle(c, 'kN');
   if (txt) {
     const ancre = Math.abs(Math.cos(a)) < 0.4 ? 'middle' : (Math.cos(a) > 0 ? 'end' : 'start');
-    const dy = Math.abs(Math.cos(a)) < 0.4 ? (Math.sin(a) > 0 ? 12 : -3) : 4;
+    // fleche vers le bas : texte au-dessus de la queue ; vers le haut : en dessous
+    const dy = Math.abs(Math.cos(a)) < 0.4 ? (Math.sin(a) > 0 ? -3 : 12) : 4;
     g += '<text' + attrEtiquette(c, p, 'charge') + ' x="' + tx.toFixed(1) + '" y="' + (ty + dy).toFixed(1) + '" text-anchor="' + ancre +
       '" font-family="system-ui, sans-serif" font-size="13" fill="' + couleur + '">' + echappe(txt) + '</text>';
   }
@@ -557,10 +575,10 @@ function dessinChargeRepartie(c, p) {
     const s = i / (n - 1);
     const qx = ax + (bx - ax) * s, qy = ay + (by - ay) * s;
     const hh = h1 + (h2 - h1) * s;
-    if (Math.abs(hh) < 4) continue;
+    if (Math.abs(hh) < 7) continue;          // trop courte pour porter tige et pointe
     g += fleche(qx, qy, angle, Math.abs(hh), couleur, 1.1);
   }
-  const txt = libelle(Object.assign({}, c, { valeur: c.valeur === undefined || c.valeur === '' ? (w1 === w2 ? w1 : '') : c.valeur }), 'kN/m');
+  const txt = libelle(Object.assign({}, c, { valeur: c.valeur === undefined || c.valeur === '' ? (Math.abs(w1) >= Math.abs(w2) ? w1 : w2) : c.valeur }), 'kN/m');
   if (txt) {
     // charge laterale : etiquette rangee a cote du diagramme plutot que centree dessus
     const lateral = Math.abs(dx) > Math.abs(dy);
@@ -642,14 +660,52 @@ function dessinTexte(t, p) {
     '" fill="' + (t.couleur || COULEURS.texte) + '">' + echappe(t.texte) + '</text>';
 }
 
+// lit de ressorts le long d une barre (sol elastique) : cote du sol en dessous,
+// ou a gauche pour une barre verticale ; fondationSens = -1 le retourne
+function dessinFondation(m, ax, ay, bx, by) {
+  const l = Math.hypot(bx - ax, by - ay);
+  if (l < 1) return '';
+  const ux = (bx - ax) / l, uy = (by - ay) / l;
+  let nx = -uy, ny = ux;
+  if (ny < -1e-9 || (Math.abs(ny) <= 1e-9 && nx > 0)) { nx = -nx; ny = -ny; }
+  if (Number(m.fondationSens) === -1) { nx = -nx; ny = -ny; }
+  const c = COULEURS.appui, prof = 22;
+  const n = Math.max(2, Math.round(l / 26));
+  let g = '';
+  for (let i = 0; i < n; i++) {
+    const d0 = l * (i + 0.5) / n;
+    const x0 = ax + ux * d0, y0 = ay + uy * d0;
+    // tige, quatre zigzags, tige jusqu au sol
+    let d = 'M ' + x0.toFixed(1) + ' ' + y0.toFixed(1) +
+      ' L ' + (x0 + nx * 4).toFixed(1) + ' ' + (y0 + ny * 4).toFixed(1);
+    for (let k = 0; k < 4; k++) {
+      const e = k % 2 === 0 ? 4 : -4, q = 4 + 3 * (k + 0.5);
+      d += ' L ' + (x0 + nx * q + ux * e).toFixed(1) + ' ' + (y0 + ny * q + uy * e).toFixed(1);
+    }
+    d += ' L ' + (x0 + nx * 16).toFixed(1) + ' ' + (y0 + ny * 16).toFixed(1) +
+      ' L ' + (x0 + nx * prof).toFixed(1) + ' ' + (y0 + ny * prof).toFixed(1);
+    g += '<path d="' + d + '" fill="none" stroke="' + c + '" stroke-width="1.1"/>';
+  }
+  const gx = ax + nx * prof, gy = ay + ny * prof, hx = bx + nx * prof, hy = by + ny * prof;
+  g += '<line x1="' + gx.toFixed(1) + '" y1="' + gy.toFixed(1) + '" x2="' + hx.toFixed(1) + '" y2="' + hy.toFixed(1) +
+    '" stroke="' + c + '" stroke-width="1.6"/>';
+  for (let d0 = 4; d0 < l; d0 += 9) {
+    const x = gx + ux * d0, y = gy + uy * d0;
+    g += '<line x1="' + x.toFixed(1) + '" y1="' + y.toFixed(1) + '" x2="' + (x + nx * 6 - ux * 6).toFixed(1) +
+      '" y2="' + (y + ny * 6 - uy * 6).toFixed(1) + '" stroke="' + c + '" stroke-width="1"/>';
+  }
+  return g;
+}
+
 function dessinBarre(m, p) {
   const a = noeud(m.a), b = noeud(m.b);
   if (!a || !b) return '';
   const [ax, ay] = p.ecran(a.x, a.y);
   const [bx, by] = p.ecran(b.x, b.y);
+  const fondation = m.fondation === 'ressorts' ? dessinFondation(m, ax, ay, bx, by) : '';
   const tirets = m.trait === 'tirets' ? ' stroke-dasharray="9 5"' :
     m.trait === 'mixte' ? ' stroke-dasharray="12 4 2 4"' : '';
-  let g = '<line x1="' + ax.toFixed(1) + '" y1="' + ay.toFixed(1) + '" x2="' + bx.toFixed(1) + '" y2="' + by.toFixed(1) +
+  let g = fondation + '<line x1="' + ax.toFixed(1) + '" y1="' + ay.toFixed(1) + '" x2="' + bx.toFixed(1) + '" y2="' + by.toFixed(1) +
     '" stroke="' + (m.couleur || COULEURS.structure) + '" stroke-width="' + (m.epaisseur || 2.4) +
     '" stroke-linecap="round"' + tirets + '/>';
   if (m.etiquette) {
@@ -901,6 +957,16 @@ toile.addEventListener('pointerdown', ev => {
     return;
   }
 
+  if (outil === 'appui' && reglages.typeAppui === 'lineaire') {
+    const t = toucher(sx, sy);
+    if (!t || t.genre !== 'barre') { indice('Cliquez sur une barre pour y poser des ressorts lineaires.'); return; }
+    memoriser();
+    barre(t.id).fondation = 'ressorts';
+    sel = { genre: 'barre', id: t.id };
+    dessiner(); construirePanneau(); sauverLocal();
+    return;
+  }
+
   if (outil === 'appui') {
     const n = noeudPres(mx, my, 18);
     if (!n) { indice('Cliquez sur un noeud pour y poser un appui.'); return; }
@@ -947,9 +1013,11 @@ toile.addEventListener('pointerdown', ev => {
     const t = toucher(sx, sy);
     if (!t || t.genre !== 'barre') { indice('Cliquez sur une barre pour y appliquer une charge repartie.'); return; }
     memoriser();
+    const w = reglages.valeurRepartie;
     const c = {
       id: nid(), genre: 'repartie', barre: t.id, t1: 0, t2: 1,
-      w1: reglages.valeurRepartie, w2: reglages.valeurRepartie,
+      w1: reglages.formeRepartie === 'croissante' ? 0 : w,
+      w2: reglages.formeRepartie === 'decroissante' ? 0 : w,
       orientation: reglages.orientationRepartie, hauteur: 30, remplissage: 0.1,
       etiquette: '', valeur: reglages.valeurRepartie, unite: 'kN/m', couleur: COULEURS.charge
     };
@@ -1179,11 +1247,13 @@ function construirePanneau() {
     h += ligne('y (m)', champ('number', 'y', o.y, 'step="0.05"'));
   } else if (sel.genre === 'barre') {
     h += ligne('Nom', champ('text', 'etiquette', o.etiquette || ''));
+    h += ligne('Appui continu', champChoix('fondation', o.fondation || '', [['', 'Aucun'], ['ressorts', 'Ressorts lineaires']]));
+    if (o.fondation) h += ligne('Cote du sol', champChoix('fondationSens', o.fondationSens || '1', [['1', 'Dessous / gauche'], ['-1', 'Dessus / droite']]));
     h += ligne('Couleur', champ('color', 'couleur', o.couleur || COULEURS.structure));
     h += ligne('Epaisseur', champ('number', 'epaisseur', o.epaisseur || 2.4, 'step="0.2" min="0.4"'));
     h += ligne('Trait', champChoix('trait', o.trait || 'continu', [['continu', 'Continu'], ['tirets', 'Tirets'], ['mixte', 'Mixte']]));
   } else if (sel.genre === 'appui') {
-    h += ligne('Type', champChoix('type', o.type, [['double', 'Articule fixe'], ['simple', 'Articule mobile'], ['encastrement', 'Encastrement'], ['ressort', 'Ressort'], ['rotule', 'Rotule interne']]));
+    h += ligne('Type', champChoix('type', o.type, TYPES_APPUI));
     h += ligne('Rotation', champ('number', 'angle', o.angle || 0, 'step="15"'));
     h += ligne('Couleur', champ('color', 'couleur', o.couleur || COULEURS.appui));
   } else if (sel.genre === 'charge' && o.genre === 'ponctuelle') {
@@ -1200,7 +1270,7 @@ function construirePanneau() {
     h += ligne('w2', champ('number', 'w2', o.w2, 'step="0.5"'));
     h += ligne('Valeur', champ('number', 'valeur', o.valeur === undefined ? '' : o.valeur, 'step="0.5"'));
     h += ligne('Unite', champ('text', 'unite', o.unite || 'kN/m'));
-    h += ligne('Direction', champChoix('orientation', o.orientation, [['verticale', 'Verticale'], ['horizontale', 'Horizontale'], ['perp', 'Perpendiculaire']]));
+    h += ligne('Direction', champChoix('orientation', o.orientation, ORIENTATIONS));
     h += ligne('Debut', champ('number', 't1', o.t1, 'step="0.05" min="0" max="1"'));
     h += ligne('Fin', champ('number', 't2', o.t2, 'step="0.05" min="0" max="1"'));
     h += ligne('Hauteur', champ('number', 'hauteur', o.hauteur || 30, 'step="2"'));
@@ -1234,14 +1304,18 @@ function construirePanneau() {
 
   if (outil !== 'select' && !o) {
     h += '<h2>Reglages de l outil</h2>';
-    if (outil === 'appui') h += ligne('Type', champChoix('r:typeAppui', reglages.typeAppui, [['double', 'Articule fixe'], ['simple', 'Articule mobile'], ['encastrement', 'Encastrement'], ['ressort', 'Ressort'], ['rotule', 'Rotule interne']]));
+    if (outil === 'appui') {
+      h += ligne('Type', champChoix('r:typeAppui', reglages.typeAppui, TYPES_APPUI_OUTIL));
+      if (reglages.typeAppui === 'lineaire') h += '<p class="aide">Cliquez une barre : elle recoit un lit de ressorts (sol elastique, Winkler).</p>';
+    }
     if (outil === 'ponctuelle') {
       h += ligne('Valeur (kN)', champ('number', 'r:valeurPonctuelle', reglages.valeurPonctuelle, 'step="0.5"'));
       h += ligne('Angle', champ('number', 'r:anglePonctuelle', reglages.anglePonctuelle, 'step="15"'));
     }
     if (outil === 'repartie') {
       h += ligne('w (kN/m)', champ('number', 'r:valeurRepartie', reglages.valeurRepartie, 'step="0.5"'));
-      h += ligne('Direction', champChoix('r:orientationRepartie', reglages.orientationRepartie, [['verticale', 'Verticale'], ['horizontale', 'Horizontale'], ['perp', 'Perpendiculaire']]));
+      h += ligne('Forme', champChoix('r:formeRepartie', reglages.formeRepartie, FORMES_REPARTIE));
+      h += ligne('Direction', champChoix('r:orientationRepartie', reglages.orientationRepartie, ORIENTATIONS));
     }
     if (outil === 'moment') h += ligne('Valeur', champ('number', 'r:valeurMoment', reglages.valeurMoment, 'step="0.5"'));
   }
@@ -1249,11 +1323,15 @@ function construirePanneau() {
   h += panneauCharges();
 
   const cas = CAS.find(c => c.cle === casChoisi) || CAS[0];
-  h += '<h2>Cas pratiques</h2>';
-  h += ligne('Cas', '<select id="c-cas">' + CAS.map(c =>
-    '<option value="' + c.cle + '"' + (c.cle === cas.cle ? ' selected' : '') + '>' + c.nom + '</option>').join('') + '</select>');
+  h += '<h2>Modeles de base et cas pratiques</h2>';
+  const groupes = [];
+  for (const c of CAS) { const g = c.groupe || 'Cas pratiques'; if (groupes.indexOf(g) < 0) groupes.push(g); }
+  h += ligne('Schema', '<select id="c-cas">' + groupes.map(g => '<optgroup label="' + g + '">' +
+    CAS.filter(c => (c.groupe || 'Cas pratiques') === g).map(c =>
+      '<option value="' + c.cle + '"' + (c.cle === cas.cle ? ' selected' : '') + '>' + c.nom + '</option>').join('') +
+    '</optgroup>').join('') + '</select>');
   h += '<p class="aide">' + cas.aide + '</p>';
-  h += '<div class="actions"><button class="bouton principal" id="b-cas">Charger le cas</button></div>';
+  h += '<div class="actions"><button class="bouton principal" id="b-cas">Charger</button></div>';
 
   const modeles = lireModeles();
   if (modeleChoisi && !modeles.some(m => m.nom === modeleChoisi)) modeleChoisi = '';
@@ -1306,8 +1384,18 @@ function construirePanneau() {
   brancherPanneau();
 }
 
+const ORIENTATIONS = [['verticale', 'Verticale'], ['horizontale', 'Horizontale, depuis la gauche'],
+  ['horizontaleD', 'Horizontale, depuis la droite'], ['perp', 'Perpendiculaire']];
+
+// 'lineaire' ne se pose que par l outil : il s applique a une barre, pas a un noeud
+const TYPES_APPUI = [['double', 'Articule fixe'], ['simple', 'Articule mobile'], ['encastrement', 'Encastrement'],
+  ['ressort', 'Ressort'], ['ressortRotation', 'Ressort en rotation'], ['rotule', 'Rotule interne']];
+const TYPES_APPUI_OUTIL = TYPES_APPUI.concat([['lineaire', 'Ressorts lineaires (barre)']]);
+
+const FORMES_REPARTIE = [['uniforme', 'Uniforme'], ['croissante', 'Triangle 0 -> w'], ['decroissante', 'Triangle w -> 0']];
+
 function optionsAppui(val) {
-  return [['double', 'Articule fixe'], ['simple', 'Articule mobile'], ['encastrement', 'Encastrement']]
+  return TYPES_APPUI.filter(o => o[0] !== 'rotule')
     .map(o => '<option value="' + o[0] + '"' + (val === o[0] ? ' selected' : '') + '>' + o[1] + '</option>').join('');
 }
 
@@ -1320,12 +1408,14 @@ function brancherPanneau() {
         input.type === 'number' ? (input.value === '' ? '' : parseFloat(input.value)) : input.value;
       if (cle.startsWith('r:')) {
         reglages[cle.slice(2)] = val;
+        if (cle === 'r:typeAppui') setTimeout(construirePanneau, 0);
         dessiner();
         return;
       }
       const o = objetSelectionne();
       if (!o) return;
       o[cle] = val;
+      if (cle === 'fondation') setTimeout(construirePanneau, 0);
       dessiner(); sauverLocal();
     };
     input.addEventListener('input', gerer);
@@ -1577,7 +1667,220 @@ function cPoutre(xs) {
   return { ns: ns, ms: ms };
 }
 
-const CAS = [
+// angle d un encastrement en bout de poutre horizontale : mur a gauche ou a droite
+const MUR_GAUCHE = 90, MUR_DROIT = -90;
+
+const MODELES_BASE = [
+  {
+    cle: 'b-isostatique', nom: 'Poutre sur deux appuis',
+    aide: 'Articule fixe et articule mobile, charge uniforme.',
+    construire() {
+      const p = cPoutre([0, 6]);
+      cAppui(p.ns[0], 'double'); cAppui(p.ns[1], 'simple');
+      cRepartie(p.ms[0], 10, 10, { etiquette: 'q' });
+      cChaineH(p.ns);
+    }
+  },
+  {
+    cle: 'b-triangle', nom: 'Poutre sous charge triangulaire',
+    aide: 'Charge nulle a gauche, maximale a droite. La forme se regle par w1 et w2.',
+    construire() {
+      const p = cPoutre([0, 6]);
+      cAppui(p.ns[0], 'double'); cAppui(p.ns[1], 'simple');
+      cRepartie(p.ms[0], 0, 12, { etiquette: 'q', hauteur: 36 });
+      cChaineH(p.ns);
+    }
+  },
+  {
+    cle: 'b-encastree-articulee', nom: 'Poutre encastree - articulee',
+    aide: 'Encastrement a gauche, appui mobile a droite.',
+    construire() {
+      const p = cPoutre([0, 6]);
+      cAppui(p.ns[0], 'encastrement', MUR_GAUCHE); cAppui(p.ns[1], 'simple');
+      cRepartie(p.ms[0], 10, 10, { etiquette: 'q' });
+      cChaineH(p.ns);
+    }
+  },
+  {
+    cle: 'b-biencastree', nom: 'Poutre bi-encastree',
+    aide: 'Encastrements aux deux extremites.',
+    construire() {
+      const p = cPoutre([0, 6]);
+      cAppui(p.ns[0], 'encastrement', MUR_GAUCHE); cAppui(p.ns[1], 'encastrement', MUR_DROIT);
+      cRepartie(p.ms[0], 10, 10, { etiquette: 'q' });
+      cChaineH(p.ns);
+    }
+  },
+  {
+    cle: 'b-encastrements-elastiques', nom: 'Poutre a encastrements elastiques',
+    aide: 'Appuis articules retenus en rotation par des ressorts : encastrement partiel.',
+    construire() {
+      const p = cPoutre([0, 6]);
+      cAppui(p.ns[0], 'ressortRotation'); cAppui(p.ns[1], 'ressortRotation');
+      cRepartie(p.ms[0], 10, 10, { etiquette: 'q' });
+      cChaineH(p.ns);
+      cTexte(0, -1.3, 'k_theta', { taille: 12, ancrage: 'middle', couleur: COULEURS.texteDoux });
+      cTexte(6, -1.3, 'k_theta', { taille: 12, ancrage: 'middle', couleur: COULEURS.texteDoux });
+    }
+  },
+  {
+    cle: 'b-console', nom: 'Console',
+    aide: 'Encastrement a gauche, force en bout libre.',
+    construire() {
+      const p = cPoutre([0, 3]);
+      cAppui(p.ns[0], 'encastrement', MUR_GAUCHE);
+      cRepartie(p.ms[0], 8, 8, { etiquette: 'q' });
+      cForce(p.ns[1], 20, { etiquette: 'F', longueur: 84 });
+      cChaineH(p.ns);
+    }
+  },
+  {
+    cle: 'b-continue2', nom: 'Poutre continue, 2 travees',
+    aide: 'Trois appuis, charge uniforme.',
+    construire() {
+      const p = cPoutre([0, 5, 10]);
+      cAppui(p.ns[0], 'double'); cAppui(p.ns[1], 'simple'); cAppui(p.ns[2], 'simple');
+      for (const m of p.ms) cRepartie(m, 10, 10, m === p.ms[0] ? { etiquette: 'q' } : { valeur: null });
+      cChaineH(p.ns);
+    }
+  },
+  {
+    cle: 'b-continue3', nom: 'Poutre continue, 3 travees',
+    aide: 'Quatre appuis, charge uniforme.',
+    construire() {
+      const p = cPoutre([0, 5, 11, 16]);
+      cAppui(p.ns[0], 'double');
+      for (let i = 1; i < 4; i++) cAppui(p.ns[i], 'simple');
+      for (const m of p.ms) cRepartie(m, 10, 10, m === p.ms[1] ? { etiquette: 'q' } : { valeur: null });
+      cChaineH(p.ns);
+    }
+  },
+  {
+    cle: 'b-continue-encastree', nom: 'Poutre continue encastree',
+    aide: 'Deux travees encastrees aux rives, appui intermediaire mobile.',
+    construire() {
+      const p = cPoutre([0, 6, 12]);
+      cAppui(p.ns[0], 'encastrement', MUR_GAUCHE); cAppui(p.ns[1], 'simple');
+      cAppui(p.ns[2], 'encastrement', MUR_DROIT);
+      for (const m of p.ms) cRepartie(m, 10, 10, m === p.ms[0] ? { etiquette: 'q' } : { valeur: null });
+      cChaineH(p.ns);
+    }
+  },
+  {
+    cle: 'b-ressorts', nom: 'Poutre sur appuis ressorts',
+    aide: 'Appuis elastiques ponctuels (pieux, poteaux souples), raideur k.',
+    construire() {
+      const p = cPoutre([0, 4, 8, 12]);
+      for (const n of p.ns) cAppui(n, 'ressort');
+      for (const m of p.ms) cRepartie(m, 10, 10, m === p.ms[1] ? { etiquette: 'q' } : { valeur: null });
+      cChaineH(p.ns);
+      cTexte(-0.4, -0.45, 'k', { taille: 12, ancrage: 'end', couleur: COULEURS.texteDoux });
+    }
+  },
+  {
+    cle: 'b-winkler', nom: 'Poutre sur sol elastique',
+    aide: 'Appui lineaire par ressorts (Winkler), module de reaction k_s : semelle filante, radier.',
+    construire() {
+      const p = cPoutre([0, 8]);
+      p.ms[0].fondation = 'ressorts';
+      cForce({ barre: p.ms[0], t: 0.25 }, 300, { etiquette: 'N_1' });
+      cForce({ barre: p.ms[0], t: 0.75 }, 300, { etiquette: 'N_2' });
+      cChaineH(p.ns);
+      cCote(p.ns[0], { x: 2, y: 0 }, 'h', 94);
+      cTexte(8.25, -0.3, 'k_s', { taille: 12, couleur: COULEURS.texteDoux });
+    }
+  },
+  {
+    cle: 'b-mat', nom: 'Poteau encastre - libre',
+    aide: 'Mat ou poteau en console : effort normal et force horizontale en tete.',
+    construire() {
+      const a = cNoeud(0, 0), b = cNoeud(0, 4);
+      cBarre(a, b);
+      cAppui(a, 'encastrement');
+      cForce(b, 500, { etiquette: 'N' });
+      cForce(b, 15, { etiquette: 'H', angle: 0 });
+      cCote(a, b, 'v', -50);
+    }
+  },
+  {
+    cle: 'b-poteau-aa', nom: 'Poteau articule - articule',
+    aide: 'Pied articule, tete guidee lateralement : longueur de flambement l.',
+    construire() {
+      const a = cNoeud(0, 0), b = cNoeud(0, 4);
+      cBarre(a, b);
+      cAppui(a, 'double'); cAppui(b, 'simple', 90);
+      cForce(b, 500, { etiquette: 'N' });
+      cCote(a, b, 'v', -50);
+    }
+  },
+  {
+    cle: 'b-poteau-ea', nom: 'Poteau encastre - articule',
+    aide: 'Pied encastre, tete guidee lateralement.',
+    construire() {
+      const a = cNoeud(0, 0), b = cNoeud(0, 4);
+      cBarre(a, b);
+      cAppui(a, 'encastrement'); cAppui(b, 'simple', 90);
+      cForce(b, 500, { etiquette: 'N' });
+      cCote(a, b, 'v', -50);
+    }
+  },
+  {
+    cle: 'b-poteau-semelle', nom: 'Poteau sur semelle souple',
+    aide: 'Pied retenu par un ressort en rotation (rotation de la fondation), tete libre.',
+    construire() {
+      const a = cNoeud(0, 0), b = cNoeud(0, 4);
+      cBarre(a, b);
+      cAppui(a, 'ressortRotation');
+      cForce(b, 500, { etiquette: 'N' });
+      cForce(b, 15, { etiquette: 'H', angle: 0 });
+      cCote(a, b, 'v', -50);
+      cTexte(-0.3, -0.2, 'k_theta', { taille: 12, ancrage: 'end', couleur: COULEURS.texteDoux });
+    }
+  },
+  {
+    cle: 'b-portique-encastre', nom: 'Portique encastre',
+    aide: 'Pieds encastres, traverse chargee, force horizontale en tete.',
+    construire() {
+      const a = cNoeud(0, 0), b = cNoeud(0, 4), c = cNoeud(8, 4), d = cNoeud(8, 0);
+      cBarre(a, b); const t = cBarre(b, c); cBarre(c, d);
+      cAppui(a, 'encastrement'); cAppui(d, 'encastrement');
+      cRepartie(t, 10, 10, { etiquette: 'q' });
+      cForce(b, 20, { etiquette: 'H', angle: 0 });
+      cCote(a, d, 'h', 56);
+      cCote(d, c, 'v', -56);
+    }
+  },
+  {
+    cle: 'b-portique-articule', nom: 'Portique articule',
+    aide: 'Pieds articules, traverse chargee, force horizontale en tete.',
+    construire() {
+      const a = cNoeud(0, 0), b = cNoeud(0, 4), c = cNoeud(8, 4), d = cNoeud(8, 0);
+      cBarre(a, b); const t = cBarre(b, c); cBarre(c, d);
+      cAppui(a, 'double'); cAppui(d, 'double');
+      cRepartie(t, 10, 10, { etiquette: 'q' });
+      cForce(b, 20, { etiquette: 'H', angle: 0 });
+      cCote(a, d, 'h', 56);
+      cCote(d, c, 'v', -56);
+    }
+  },
+  {
+    cle: 'b-cadre', nom: 'Cadre ferme sur sol elastique',
+    aide: 'Dalot ou cadre enterre : radier sur ressorts, poussee des terres sur les voiles, charge sur la traverse.',
+    construire() {
+      const a = cNoeud(0, 0), b = cNoeud(0, 3), c = cNoeud(4, 3), d = cNoeud(4, 0);
+      const vg = cBarre(a, b), tr = cBarre(b, c), vd = cBarre(d, c), rad = cBarre(a, d);
+      rad.fondation = 'ressorts';
+      cRepartie(tr, 25, 25, { etiquette: 'q' });
+      cRepartie(vg, 30, 12, { etiquette: 'e', orientation: 'horizontale', hauteur: 34 });
+      cRepartie(vd, 30, 12, { orientation: 'horizontaleD', hauteur: 34, valeur: null });
+      cCote(a, d, 'h', 56);
+      cCote(d, c, 'v', -110);
+      cTexte(4.3, -0.35, 'k_s', { taille: 12, couleur: COULEURS.texteDoux });
+    }
+  }
+].map(c => Object.assign(c, { groupe: 'Modeles de base' }));
+
+const CAS = MODELES_BASE.concat([
   {
     cle: 'solive', nom: 'Poutre isostatique, G et Q',
     aide: 'Solive ou panne sur deux appuis : charge permanente et exploitation empilees.',
@@ -1750,7 +2053,7 @@ const CAS = [
       cTexte(-0.4, -0.45, 'k = 80 MN/m', { taille: 12, ancrage: 'end', couleur: COULEURS.texteDoux });
     }
   }
-];
+]);
 
 let casChoisi = CAS[0].cle;
 

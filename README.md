@@ -18,9 +18,9 @@ dans le navigateur et le travail en cours est conservé dans le stockage local.
 |---|---|---|
 | Sélection | `S` | sélectionner, déplacer un nœud, un texte, une cote, une étiquette ou une charge ; glisser le fond déplace la vue |
 | Barre | `B` | cliquer les extrémités à la suite ; `Maj` contraint l'angle, `Échap` termine la polyligne |
-| Appui | `A` | poser sur un nœud l'appui choisi dans le panneau |
+| Appui | `A` | poser sur un nœud l'appui choisi dans le panneau : articulé fixe ou mobile, encastrement, ressort, ressort en rotation, rotule ; ou, sur une barre, un lit de ressorts linéaires |
 | Force | `P` | sur un nœud ou en un point d'une barre, angle réglable |
-| Répartie | `R` | sur une barre, trapézoïdale par `w1` et `w2`, verticale, horizontale ou perpendiculaire |
+| Répartie | `R` | sur une barre, uniforme ou triangulaire (puis trapézoïdale par `w1` et `w2`), verticale, horizontale depuis la gauche ou la droite, ou perpendiculaire |
 | Moment | `M` | sur un nœud, sens horaire ou antihoraire |
 | Cote | `C` | entre deux points ; accrochée aux nœuds, elle suit ensuite la géométrie |
 | Texte | `T` | annotation libre |
@@ -41,6 +41,15 @@ Tout ce que produisent le générateur, les cas pratiques ou un modèle reste
 - une **cote** glissée s'éloigne ou se rapproche du dessin ;
 - les **flèches du clavier** déplacent finement la sélection : nœuds et textes au
   pas de la grille, étiquettes et cotes de 2 px ; avec `Maj`, quatre pas ou 10 px.
+
+## Modèles de base
+
+Dix-huit structures types, à charger puis adapter : poutre sur deux appuis, sous
+charge triangulaire, encastrée-articulée, bi-encastrée, à encastrements
+élastiques, console, poutres continues à deux et trois travées ou encastrées,
+poutre sur appuis ressorts, poutre sur sol élastique (Winkler), poteaux
+encastré-libre, articulé-articulé, encastré-articulé et sur semelle souple,
+portiques encastré et articulé, cadre fermé sur sol élastique.
 
 ## Cas pratiques
 
