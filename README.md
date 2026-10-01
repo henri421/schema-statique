@@ -18,9 +18,9 @@ dans le navigateur et le travail en cours est conservé dans le stockage local.
 |---|---|---|
 | Sélection | `S` | sélectionner, déplacer un nœud, un texte, une cote, une étiquette ou une charge ; glisser le fond déplace la vue |
 | Barre | `B` | cliquer les extrémités à la suite ; `Maj` contraint l'angle, `Échap` termine la polyligne |
-| Appui | `A` | poser sur un nœud l'appui choisi dans le panneau : articulé fixe ou mobile, encastrement, ressort, ressort en rotation, rotule ; ou, sur une barre, un lit de ressorts linéaires |
+| Appui | `A` | poser sur un nœud l'appui choisi dans le panneau : articulé fixe ou mobile, encastrement, encastrement glissant, appui pendulaire, ressort, ressort en rotation, rotule ; ou, sur une barre, un lit de ressorts linéaires. Un appui peut porter un tassement imposé |
 | Force | `P` | sur un nœud ou en un point d'une barre, angle réglable |
-| Répartie | `R` | sur une barre, uniforme ou triangulaire (puis trapézoïdale par `w1` et `w2`), verticale, horizontale depuis la gauche ou la droite, ou perpendiculaire |
+| Répartie | `R` | sur une barre, uniforme ou triangulaire (puis trapézoïdale par `w1` et `w2`), verticale, horizontale depuis la gauche ou la droite, ou perpendiculaire ; par mètre de barre ou par mètre de projection |
 | Moment | `M` | sur un nœud, sens horaire ou antihoraire |
 | Cote | `C` | entre deux points ; accrochée aux nœuds, elle suit ensuite la géométrie |
 | Texte | `T` | annotation libre |
@@ -42,14 +42,25 @@ Tout ce que produisent le générateur, les cas pratiques ou un modèle reste
 - les **flèches du clavier** déplacent finement la sélection : nœuds et textes au
   pas de la grille, étiquettes et cotes de 2 px ; avec `Maj`, quatre pas ou 10 px.
 
+Dans les propriétés d'une barre, *Rotule début* et *Rotule fin* l'articulent sur
+son nœud sans articuler les autres barres qui y arrivent : une traverse posée
+sur des poteaux continus, par exemple.
+
+Une charge répartie cochée *Projection* est donnée par mètre de projection
+horizontale, comme la neige sur un rampant ou l'exploitation d'un escalier. Son
+diagramme se pose alors à l'horizontale, au-dessus du point haut de la barre,
+avec des rappels pointillés, alors que le poids propre suit la barre.
+
 ## Modèles de base
 
-Dix-huit structures types, à charger puis adapter : poutre sur deux appuis, sous
-charge triangulaire, encastrée-articulée, bi-encastrée, à encastrements
-élastiques, console, poutres continues à deux et trois travées ou encastrées,
-poutre sur appuis ressorts, poutre sur sol élastique (Winkler), poteaux
-encastré-libre, articulé-articulé, encastré-articulé et sur semelle souple,
-portiques encastré et articulé, cadre fermé sur sol élastique.
+Vingt-trois structures types, à charger puis adapter : poutre sur deux appuis,
+poutre inclinée sous G et neige, poutre sous charge triangulaire,
+encastrée-articulée, bi-encastrée, à encastrements élastiques, console, poutres
+continues à deux et trois travées ou encastrées, poutre sur appuis ressorts,
+poutre sur sol élastique (Winkler), poutre sur appui pendulaire, poutre continue
+avec tassement d'appui, poteaux encastré-libre, articulé-articulé,
+encastré-articulé, à tête guidée et sur semelle souple, portiques encastré,
+articulé et à traverse articulée, cadre fermé sur sol élastique.
 
 ## Cas pratiques
 
