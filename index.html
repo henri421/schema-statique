@@ -1011,7 +1011,7 @@ toile.addEventListener('pointerdown', ev => {
 
   if (outil === 'appui' && reglages.typeAppui === 'lineaire') {
     const t = toucher(sx, sy);
-    if (!t || t.genre !== 'barre') { indice('Cliquez sur une barre pour y poser des ressorts lineaires.'); return; }
+    if (!t || t.genre !== 'barre') { indice('Cliquez sur une barre pour y poser des ressorts linéaires.'); return; }
     memoriser();
     barre(t.id).fondation = 'ressorts';
     sel = { genre: 'barre', id: t.id };
@@ -1021,7 +1021,7 @@ toile.addEventListener('pointerdown', ev => {
 
   if (outil === 'appui') {
     const n = noeudPres(mx, my, 18);
-    if (!n) { indice('Cliquez sur un noeud pour y poser un appui.'); return; }
+    if (!n) { indice('Cliquez sur un nœud pour y poser un appui.'); return; }
     memoriser();
     etat.appuis = etat.appuis.filter(a => a.noeud !== n.id);
     const a = { id: nid(), noeud: n.id, type: reglages.typeAppui, angle: 0, couleur: COULEURS.appui };
@@ -1045,7 +1045,7 @@ toile.addEventListener('pointerdown', ev => {
       c.noeud = n.id;
     } else {
       const t = toucher(sx, sy);
-      if (!t || t.genre !== 'barre') { indice('Cliquez sur un noeud ou sur une barre.'); return; }
+      if (!t || t.genre !== 'barre') { indice('Cliquez sur un nœud ou sur une barre.'); return; }
       c.barre = t.id;
       c.t = parametreSurBarre(barre(t.id), mx, my);
       // une force posee sur une barre deja chargee part au-dessus du diagramme reparti
@@ -1063,7 +1063,7 @@ toile.addEventListener('pointerdown', ev => {
 
   if (outil === 'repartie') {
     const t = toucher(sx, sy);
-    if (!t || t.genre !== 'barre') { indice('Cliquez sur une barre pour y appliquer une charge repartie.'); return; }
+    if (!t || t.genre !== 'barre') { indice('Cliquez sur une barre pour y appliquer une charge répartie.'); return; }
     memoriser();
     const w = reglages.valeurRepartie;
     const c = {
@@ -1233,11 +1233,11 @@ function indice(txt) { document.getElementById('indice').textContent = txt || ''
 /* ----------------------------- rail ------------------------------- */
 
 const OUTILS = [
-  { cle: 'select', nom: 'Selection', touche: 'S', icone: 'M4 3 L4 16 L8 12 L11 17 L13 16 L10 11 L15 11 Z' },
+  { cle: 'select', nom: 'Sélection', touche: 'S', icone: 'M4 3 L4 16 L8 12 L11 17 L13 16 L10 11 L15 11 Z' },
   { cle: 'barre', nom: 'Barre', touche: 'B', icone: 'M3 15 L17 5' },
   { cle: 'appui', nom: 'Appui', touche: 'A', icone: 'M10 4 L4 14 L16 14 Z M2 17 L18 17' },
   { cle: 'ponctuelle', nom: 'Force', touche: 'P', icone: 'M10 2 L10 16 M6 12 L10 17 L14 12' },
-  { cle: 'repartie', nom: 'Repartie', touche: 'R', icone: 'M2 3 L18 3 M5 3 L5 11 M10 3 L10 11 M15 3 L15 11 M2 14 L18 14' },
+  { cle: 'repartie', nom: 'Répartie', touche: 'R', icone: 'M2 3 L18 3 M5 3 L5 11 M10 3 L10 11 M15 3 L15 11 M2 14 L18 14' },
   { cle: 'moment', nom: 'Moment', touche: 'M', icone: 'M4 10 A6 6 0 1 1 10 16 M10 16 L7 13 M10 16 L13 13' },
   { cle: 'cote', nom: 'Cote', touche: 'C', icone: 'M3 6 L3 14 M17 6 L17 14 M3 10 L17 10' },
   { cle: 'texte', nom: 'Texte', touche: 'T', icone: 'M4 5 L16 5 M10 5 L10 16' }
@@ -1260,13 +1260,13 @@ function majRail() {
 }
 
 const AIDE = {
-  select: 'Cliquez pour selectionner, glissez pour deplacer, y compris les etiquettes. Fleches : deplacement fin.',
-  barre: 'Cliquez les extremites a la suite. Maj contraint l angle, Echap termine la polyligne.',
-  appui: 'Cliquez un noeud. Le type se choisit a droite.',
-  ponctuelle: 'Cliquez un noeud ou un point d une barre.',
-  repartie: 'Cliquez une barre. Les valeurs w1 et w2 se reglent a droite.',
-  moment: 'Cliquez un noeud.',
-  cote: 'Cliquez deux points. Les noeuds sont accroches, la cote suit alors la geometrie.',
+  select: 'Cliquez pour sélectionner, glissez pour déplacer, y compris les étiquettes. Flèches : déplacement fin.',
+  barre: 'Cliquez les extrémités à la suite. Maj contraint l\'angle, Échap termine la polyligne.',
+  appui: 'Cliquez un nœud. Le type se choisit à droite.',
+  ponctuelle: 'Cliquez un nœud ou un point d\'une barre.',
+  repartie: 'Cliquez une barre. Les valeurs w1 et w2 se règlent à droite.',
+  moment: 'Cliquez un nœud.',
+  cote: 'Cliquez deux points. Les nœuds sont accrochés, la cote suit alors la géométrie.',
   texte: 'Cliquez pour poser une annotation.'
 };
 
@@ -1291,20 +1291,20 @@ function construirePanneau() {
   let h = '';
 
   const o = objetSelectionne();
-  h += '<h2>Proprietes</h2>';
+  h += '<h2>Propriétés</h2>';
   if (!o) {
-    h += '<p class="vide">Aucune selection. ' + (AIDE[outil] || '') + '</p>';
+    h += '<p class="vide">Aucune sélection. ' + (AIDE[outil] || '') + '</p>';
   } else if (sel.genre === 'noeud') {
     h += ligne('x (m)', champ('number', 'x', o.x, 'step="0.05"'));
     h += ligne('y (m)', champ('number', 'y', o.y, 'step="0.05"'));
   } else if (sel.genre === 'barre') {
     h += ligne('Nom', champ('text', 'etiquette', o.etiquette || ''));
-    h += ligne('Rotule debut', champCase('rotuleA', o.rotuleA));
+    h += ligne('Rotule début', champCase('rotuleA', o.rotuleA));
     h += ligne('Rotule fin', champCase('rotuleB', o.rotuleB));
-    h += ligne('Appui continu', champChoix('fondation', o.fondation || '', [['', 'Aucun'], ['ressorts', 'Ressorts lineaires']]));
+    h += ligne('Appui continu', champChoix('fondation', o.fondation || '', [['', 'Aucun'], ['ressorts', 'Ressorts linéaires']]));
     if (o.fondation) h += ligne('Cote du sol', champChoix('fondationSens', o.fondationSens || '1', [['1', 'Dessous / gauche'], ['-1', 'Dessus / droite']]));
     h += ligne('Couleur', champ('color', 'couleur', o.couleur || COULEURS.structure));
-    h += ligne('Epaisseur', champ('number', 'epaisseur', o.epaisseur || 2.4, 'step="0.2" min="0.4"'));
+    h += ligne('Épaisseur', champ('number', 'epaisseur', o.epaisseur || 2.4, 'step="0.2" min="0.4"'));
     h += ligne('Trait', champChoix('trait', o.trait || 'continu', [['continu', 'Continu'], ['tirets', 'Tirets'], ['mixte', 'Mixte']]));
   } else if (sel.genre === 'appui') {
     h += ligne('Type', champChoix('type', o.type, TYPES_APPUI));
@@ -1314,7 +1314,7 @@ function construirePanneau() {
   } else if (sel.genre === 'charge' && o.genre === 'ponctuelle') {
     h += ligne('Nom', champ('text', 'etiquette', o.etiquette || ''));
     h += ligne('Valeur', champ('number', 'valeur', o.valeur, 'step="0.5"'));
-    h += ligne('Unite', champ('text', 'unite', o.unite || 'kN'));
+    h += ligne('Unité', champ('text', 'unite', o.unite || 'kN'));
     h += ligne('Angle', champ('number', 'angle', o.angle === undefined ? -90 : o.angle, 'step="15"'));
     if (o.barre !== undefined && o.barre !== null) h += ligne('Position', champ('number', 't', o.t, 'step="0.05" min="0" max="1"'));
     h += ligne('Longueur', champ('number', 'longueur', o.longueur || 48, 'step="4"'));
@@ -1324,10 +1324,10 @@ function construirePanneau() {
     h += ligne('w1', champ('number', 'w1', o.w1, 'step="0.5"'));
     h += ligne('w2', champ('number', 'w2', o.w2, 'step="0.5"'));
     h += ligne('Valeur', champ('number', 'valeur', o.valeur === undefined ? '' : o.valeur, 'step="0.5"'));
-    h += ligne('Unite', champ('text', 'unite', o.unite || 'kN/m'));
+    h += ligne('Unité', champ('text', 'unite', o.unite || 'kN/m'));
     h += ligne('Direction', champChoix('orientation', o.orientation, ORIENTATIONS));
     h += ligne('Projection', champCase('projection', o.projection));
-    h += ligne('Debut', champ('number', 't1', o.t1, 'step="0.05" min="0" max="1"'));
+    h += ligne('Début', champ('number', 't1', o.t1, 'step="0.05" min="0" max="1"'));
     h += ligne('Fin', champ('number', 't2', o.t2, 'step="0.05" min="0" max="1"'));
     h += ligne('Hauteur', champ('number', 'hauteur', o.hauteur || 30, 'step="2"'));
     h += ligne('Base', champ('number', 'base', o.base || 0, 'step="2" min="0"'));
@@ -1336,14 +1336,14 @@ function construirePanneau() {
   } else if (sel.genre === 'charge' && o.genre === 'moment') {
     h += ligne('Nom', champ('text', 'etiquette', o.etiquette || ''));
     h += ligne('Valeur', champ('number', 'valeur', o.valeur, 'step="0.5"'));
-    h += ligne('Unite', champ('text', 'unite', o.unite || 'kN.m'));
+    h += ligne('Unité', champ('text', 'unite', o.unite || 'kN.m'));
     h += ligne('Sens', champChoix('sens', o.sens, [['horaire', 'Horaire'], ['antihoraire', 'Antihoraire']]));
     h += ligne('Rayon', champ('number', 'rayon', o.rayon || 20, 'step="2"'));
     h += ligne('Couleur', champ('color', 'couleur', o.couleur || COULEURS.charge));
   } else if (sel.genre === 'cote') {
     h += ligne('Texte', champ('text', 'texte', o.texte || '', 'placeholder="' + echappe(texteCote(o)) + '"'));
-    h += ligne('Direction', champChoix('direction', o.direction, [['h', 'Horizontale'], ['v', 'Verticale'], ['alignee', 'Alignee']]));
-    h += ligne('Decalage', champ('number', 'decalage', o.decalage, 'step="5"'));
+    h += ligne('Direction', champChoix('direction', o.direction, [['h', 'Horizontale'], ['v', 'Verticale'], ['alignee', 'Alignée']]));
+    h += ligne('Décalage', champ('number', 'decalage', o.decalage, 'step="5"'));
     h += ligne('Couleur', champ('color', 'couleur', o.couleur || COULEURS.cote));
   } else if (sel.genre === 'texte') {
     h += ligne('Texte', champ('text', 'texte', o.texte));
@@ -1353,16 +1353,16 @@ function construirePanneau() {
     h += ligne('Couleur', champ('color', 'couleur', o.couleur || COULEURS.texte));
   }
   if (o && (sel.genre === 'charge' || sel.genre === 'barre')) {
-    h += ligne('Etiquette dx', champ('number', 'lx', o.lx || 0, 'step="2"'));
-    h += ligne('Etiquette dy', champ('number', 'ly', o.ly || 0, 'step="2"'));
+    h += ligne('Étiquette dx', champ('number', 'lx', o.lx || 0, 'step="2"'));
+    h += ligne('Étiquette dy', champ('number', 'ly', o.ly || 0, 'step="2"'));
   }
   if (o) h += '<div class="actions"><button class="bouton" id="b-supprimer">Supprimer</button></div>';
 
   if (outil !== 'select' && !o) {
-    h += '<h2>Reglages de l outil</h2>';
+    h += '<h2>Réglages de l\'outil</h2>';
     if (outil === 'appui') {
       h += ligne('Type', champChoix('r:typeAppui', reglages.typeAppui, TYPES_APPUI_OUTIL));
-      if (reglages.typeAppui === 'lineaire') h += '<p class="aide">Cliquez une barre : elle recoit un lit de ressorts (sol elastique, Winkler).</p>';
+      if (reglages.typeAppui === 'lineaire') h += '<p class="aide">Cliquez une barre : elle reçoit un lit de ressorts (sol élastique, Winkler).</p>';
     }
     if (outil === 'ponctuelle') {
       h += ligne('Valeur (kN)', champ('number', 'r:valeurPonctuelle', reglages.valeurPonctuelle, 'step="0.5"'));
@@ -1373,7 +1373,7 @@ function construirePanneau() {
       h += ligne('Forme', champChoix('r:formeRepartie', reglages.formeRepartie, FORMES_REPARTIE));
       h += ligne('Direction', champChoix('r:orientationRepartie', reglages.orientationRepartie, ORIENTATIONS));
       h += ligne('Projection', champCase('r:projectionRepartie', reglages.projectionRepartie));
-      h += '<p class="aide">Projection : charge par metre de projection horizontale (neige, exploitation d escalier) ; sinon par metre de barre (poids propre).</p>';
+      h += '<p class="aide">Projection : charge par mètre de projection horizontale (neige, exploitation d\'escalier) ; sinon par mètre de barre (poids propre).</p>';
     }
     if (outil === 'moment') h += ligne('Valeur', champ('number', 'r:valeurMoment', reglages.valeurMoment, 'step="0.5"'));
   }
@@ -1381,10 +1381,10 @@ function construirePanneau() {
   h += panneauCharges();
 
   const cas = CAS.find(c => c.cle === casChoisi) || CAS[0];
-  h += '<h2>Modeles de base et cas pratiques</h2>';
+  h += '<h2>Modèles de base et cas pratiques</h2>';
   const groupes = [];
   for (const c of CAS) { const g = c.groupe || 'Cas pratiques'; if (groupes.indexOf(g) < 0) groupes.push(g); }
-  h += ligne('Schema', '<select id="c-cas">' + groupes.map(g => '<optgroup label="' + g + '">' +
+  h += ligne('Schéma', '<select id="c-cas">' + groupes.map(g => '<optgroup label="' + g + '">' +
     CAS.filter(c => (c.groupe || 'Cas pratiques') === g).map(c =>
       '<option value="' + c.cle + '"' + (c.cle === cas.cle ? ' selected' : '') + '>' + c.nom + '</option>').join('') +
     '</optgroup>').join('') + '</select>');
@@ -1394,8 +1394,8 @@ function construirePanneau() {
   const modeles = lireModeles();
   if (modeleChoisi && !modeles.some(m => m.nom === modeleChoisi)) modeleChoisi = '';
   if (!modeleChoisi && modeles.length) modeleChoisi = modeles[0].nom;
-  h += '<h2>Mes modeles</h2>';
-  h += '<div class="ligne-modele"><input type="text" id="m-nom" placeholder="Nom du modele" value="' + echappe(modeleChoisi) + '">' +
+  h += '<h2>Mes modèles</h2>';
+  h += '<div class="ligne-modele"><input type="text" id="m-nom" placeholder="Nom du modèle" value="' + echappe(modeleChoisi) + '">' +
     '<button class="bouton" id="b-m-enregistrer">Enregistrer</button></div>';
   if (modeles.length) {
     h += '<div class="ligne-modele"><select id="m-liste">' + modeles.map(m =>
@@ -1403,32 +1403,32 @@ function construirePanneau() {
       (m.date ? ' (' + m.date + ')' : '') + '</option>').join('') + '</select></div>';
     h += '<div class="actions"><button class="bouton principal" id="b-m-charger">Charger</button>' +
       '<button class="bouton" id="b-m-supprimer">Supprimer</button>' +
-      '<button class="bouton" id="b-m-exporter">Exporter la bibliotheque</button></div>';
+      '<button class="bouton" id="b-m-exporter">Exporter la bibliothèque</button></div>';
   }
-  h += '<p class="aide">Enregistrez un schema pour le reprendre comme point de depart. Les modeles restent dans ce navigateur : ' +
-    'exportez la bibliotheque pour la sauvegarder ; Ouvrir la reimporte.</p>';
+  h += '<p class="aide">Enregistrez un schéma pour le reprendre comme point de départ. Les modèles restent dans ce navigateur : ' +
+    'exportez la bibliothèque pour la sauvegarder ; Ouvrir la réimporte.</p>';
 
-  h += '<h2>Modele parametrique</h2>';
+  h += '<h2>Modèle paramétrique</h2>';
   h += ligne('Type', '<select id="g-type">' +
     ['poutre:Poutre continue', 'portique:Portique', 'console:Console'].map(s => {
       const q = s.split(':');
       return '<option value="' + q[0] + '"' + (generateur.type === q[0] ? ' selected' : '') + '>' + q[1] + '</option>';
     }).join('') + '</select>');
   if (generateur.type === 'poutre') {
-    h += ligne('Portees (m)', '<input type="text" id="g-portees" value="' + echappe(generateur.portees) + '">');
+    h += ligne('Portées (m)', '<input type="text" id="g-portees" value="' + echappe(generateur.portees) + '">');
     h += ligne('Console gauche', '<input type="number" id="g-cg" step="0.25" value="' + generateur.consoleG + '">');
     h += ligne('Console droite', '<input type="number" id="g-cd" step="0.25" value="' + generateur.consoleD + '">');
     h += ligne('Appui gauche', '<select id="g-ag">' + optionsAppui(generateur.appuiG) + '</select>');
   } else if (generateur.type === 'portique') {
-    h += ligne('Portee (m)', '<input type="number" id="g-L" step="0.25" value="' + generateur.L + '">');
+    h += ligne('Portée (m)', '<input type="number" id="g-L" step="0.25" value="' + generateur.L + '">');
     h += ligne('Hauteur (m)', '<input type="number" id="g-H" step="0.25" value="' + generateur.H + '">');
-    h += ligne('Fleche (m)', '<input type="number" id="g-f" step="0.25" value="' + generateur.f + '">');
+    h += ligne('Flèche (m)', '<input type="number" id="g-f" step="0.25" value="' + generateur.f + '">');
     h += ligne('Pieds', '<select id="g-pieds">' + optionsAppui(generateur.pieds) + '</select>');
   } else {
     h += ligne('Longueur (m)', '<input type="number" id="g-L" step="0.25" value="' + generateur.L + '">');
   }
-  h += '<div class="actions"><button class="bouton principal" id="b-generer">Generer</button></div>';
-  h += '<p class="aide">La generation remplace le dessin courant. Annulable par Ctrl+Z.</p>';
+  h += '<div class="actions"><button class="bouton principal" id="b-generer">Générer</button></div>';
+  h += '<p class="aide">La génération remplace le dessin courant. Annulable par Ctrl+Z.</p>';
 
   h += '<h2>Cotes et affichage</h2>';
   h += '<div class="actions"><button class="bouton" id="b-cotes">Coter automatiquement</button>' +
@@ -1436,7 +1436,7 @@ function construirePanneau() {
   h += ligne('Pas (m)', champ('number', 'r:pas', reglages.pas, 'step="0.05" min="0.01"'));
   h += ligne('Aimantation', champCase('r:aimant', reglages.aimant));
   h += ligne('Grille', champCase('r:grille', reglages.grille));
-  h += ligne('Decimales', champ('number', 'r:decimales', reglages.decimales, 'step="1" min="0" max="4"'));
+  h += ligne('Décimales', champ('number', 'r:decimales', reglages.decimales, 'step="1" min="0" max="4"'));
 
   p.innerHTML = h;
   brancherPanneau();
@@ -1446,10 +1446,10 @@ const ORIENTATIONS = [['verticale', 'Verticale'], ['horizontale', 'Horizontale, 
   ['horizontaleD', 'Horizontale, depuis la droite'], ['perp', 'Perpendiculaire']];
 
 // 'lineaire' ne se pose que par l outil : il s applique a une barre, pas a un noeud
-const TYPES_APPUI = [['double', 'Articule fixe'], ['simple', 'Articule mobile'], ['encastrement', 'Encastrement'],
+const TYPES_APPUI = [['double', 'Articulé fixe'], ['simple', 'Articulé mobile'], ['encastrement', 'Encastrement'],
   ['glissiere', 'Encastrement glissant'], ['pendule', 'Appui pendulaire (bielle)'],
   ['ressort', 'Ressort'], ['ressortRotation', 'Ressort en rotation'], ['rotule', 'Rotule interne']];
-const TYPES_APPUI_OUTIL = TYPES_APPUI.concat([['lineaire', 'Ressorts lineaires (barre)']]);
+const TYPES_APPUI_OUTIL = TYPES_APPUI.concat([['lineaire', 'Ressorts linéaires (barre)']]);
 
 const FORMES_REPARTIE = [['uniforme', 'Uniforme'], ['croissante', 'Triangle 0 -> w'], ['decroissante', 'Triangle w -> 0']];
 
@@ -1732,7 +1732,7 @@ const MUR_GAUCHE = 90, MUR_DROIT = -90;
 const MODELES_BASE = [
   {
     cle: 'b-isostatique', nom: 'Poutre sur deux appuis',
-    aide: 'Articule fixe et articule mobile, charge uniforme.',
+    aide: 'Articulé fixe et articulé mobile, charge uniforme.',
     construire() {
       const p = cPoutre([0, 6]);
       cAppui(p.ns[0], 'double'); cAppui(p.ns[1], 'simple');
@@ -1742,7 +1742,7 @@ const MODELES_BASE = [
   },
   {
     cle: 'b-triangle', nom: 'Poutre sous charge triangulaire',
-    aide: 'Charge nulle a gauche, maximale a droite. La forme se regle par w1 et w2.',
+    aide: 'Charge nulle à gauche, maximale à droite. La forme se règle par w1 et w2.',
     construire() {
       const p = cPoutre([0, 6]);
       cAppui(p.ns[0], 'double'); cAppui(p.ns[1], 'simple');
@@ -1751,8 +1751,8 @@ const MODELES_BASE = [
     }
   },
   {
-    cle: 'b-inclinee', nom: 'Poutre inclinee, G et neige',
-    aide: 'Chevron ou rampant : poids propre par metre de barre, neige par metre de projection horizontale.',
+    cle: 'b-inclinee', nom: 'Poutre inclinée, G et neige',
+    aide: 'Chevron ou rampant : poids propre par mètre de barre, neige par mètre de projection horizontale.',
     construire() {
       const a = cNoeud(0, 0), b = cNoeud(5, 2);
       const m = cBarre(a, b);
@@ -1764,8 +1764,8 @@ const MODELES_BASE = [
     }
   },
   {
-    cle: 'b-encastree-articulee', nom: 'Poutre encastree - articulee',
-    aide: 'Encastrement a gauche, appui mobile a droite.',
+    cle: 'b-encastree-articulee', nom: 'Poutre encastrée - articulée',
+    aide: 'Encastrement à gauche, appui mobile à droite.',
     construire() {
       const p = cPoutre([0, 6]);
       cAppui(p.ns[0], 'encastrement', MUR_GAUCHE); cAppui(p.ns[1], 'simple');
@@ -1774,8 +1774,8 @@ const MODELES_BASE = [
     }
   },
   {
-    cle: 'b-biencastree', nom: 'Poutre bi-encastree',
-    aide: 'Encastrements aux deux extremites.',
+    cle: 'b-biencastree', nom: 'Poutre bi-encastrée',
+    aide: 'Encastrements aux deux extrémités.',
     construire() {
       const p = cPoutre([0, 6]);
       cAppui(p.ns[0], 'encastrement', MUR_GAUCHE); cAppui(p.ns[1], 'encastrement', MUR_DROIT);
@@ -1784,8 +1784,8 @@ const MODELES_BASE = [
     }
   },
   {
-    cle: 'b-encastrements-elastiques', nom: 'Poutre a encastrements elastiques',
-    aide: 'Appuis articules retenus en rotation par des ressorts : encastrement partiel.',
+    cle: 'b-encastrements-elastiques', nom: 'Poutre à encastrements élastiques',
+    aide: 'Appuis articulés retenus en rotation par des ressorts : encastrement partiel.',
     construire() {
       const p = cPoutre([0, 6]);
       cAppui(p.ns[0], 'ressortRotation'); cAppui(p.ns[1], 'ressortRotation');
@@ -1797,7 +1797,7 @@ const MODELES_BASE = [
   },
   {
     cle: 'b-console', nom: 'Console',
-    aide: 'Encastrement a gauche, force en bout libre.',
+    aide: 'Encastrement à gauche, force en bout libre.',
     construire() {
       const p = cPoutre([0, 3]);
       cAppui(p.ns[0], 'encastrement', MUR_GAUCHE);
@@ -1807,7 +1807,7 @@ const MODELES_BASE = [
     }
   },
   {
-    cle: 'b-continue2', nom: 'Poutre continue, 2 travees',
+    cle: 'b-continue2', nom: 'Poutre continue, 2 travées',
     aide: 'Trois appuis, charge uniforme.',
     construire() {
       const p = cPoutre([0, 5, 10]);
@@ -1817,7 +1817,7 @@ const MODELES_BASE = [
     }
   },
   {
-    cle: 'b-continue3', nom: 'Poutre continue, 3 travees',
+    cle: 'b-continue3', nom: 'Poutre continue, 3 travées',
     aide: 'Quatre appuis, charge uniforme.',
     construire() {
       const p = cPoutre([0, 5, 11, 16]);
@@ -1828,8 +1828,8 @@ const MODELES_BASE = [
     }
   },
   {
-    cle: 'b-continue-encastree', nom: 'Poutre continue encastree',
-    aide: 'Deux travees encastrees aux rives, appui intermediaire mobile.',
+    cle: 'b-continue-encastree', nom: 'Poutre continue encastrée',
+    aide: 'Deux travées encastrées aux rives, appui intermédiaire mobile.',
     construire() {
       const p = cPoutre([0, 6, 12]);
       cAppui(p.ns[0], 'encastrement', MUR_GAUCHE); cAppui(p.ns[1], 'simple');
@@ -1840,7 +1840,7 @@ const MODELES_BASE = [
   },
   {
     cle: 'b-ressorts', nom: 'Poutre sur appuis ressorts',
-    aide: 'Appuis elastiques ponctuels (pieux, poteaux souples), raideur k.',
+    aide: 'Appuis élastiques ponctuels (pieux, poteaux souples), raideur k.',
     construire() {
       const p = cPoutre([0, 4, 8, 12]);
       for (const n of p.ns) cAppui(n, 'ressort');
@@ -1850,8 +1850,8 @@ const MODELES_BASE = [
     }
   },
   {
-    cle: 'b-winkler', nom: 'Poutre sur sol elastique',
-    aide: 'Appui lineaire par ressorts (Winkler), module de reaction k_s : semelle filante, radier.',
+    cle: 'b-winkler', nom: 'Poutre sur sol élastique',
+    aide: 'Appui linéaire par ressorts (Winkler), module de réaction k_s : semelle filante, radier.',
     construire() {
       const p = cPoutre([0, 8]);
       p.ms[0].fondation = 'ressorts';
@@ -1863,8 +1863,8 @@ const MODELES_BASE = [
     }
   },
   {
-    cle: 'b-mat', nom: 'Poteau encastre - libre',
-    aide: 'Mat ou poteau en console : effort normal et force horizontale en tete.',
+    cle: 'b-mat', nom: 'Poteau encastré - libre',
+    aide: 'Mat ou poteau en console : effort normal et force horizontale en tête.',
     construire() {
       const a = cNoeud(0, 0), b = cNoeud(0, 4);
       cBarre(a, b);
@@ -1875,8 +1875,8 @@ const MODELES_BASE = [
     }
   },
   {
-    cle: 'b-poteau-aa', nom: 'Poteau articule - articule',
-    aide: 'Pied articule, tete guidee lateralement : longueur de flambement l.',
+    cle: 'b-poteau-aa', nom: 'Poteau articulé - articulé',
+    aide: 'Pied articulé, tête guidée latéralement : longueur de flambement l.',
     construire() {
       const a = cNoeud(0, 0), b = cNoeud(0, 4);
       cBarre(a, b);
@@ -1886,8 +1886,8 @@ const MODELES_BASE = [
     }
   },
   {
-    cle: 'b-poteau-ea', nom: 'Poteau encastre - articule',
-    aide: 'Pied encastre, tete guidee lateralement.',
+    cle: 'b-poteau-ea', nom: 'Poteau encastré - articulé',
+    aide: 'Pied encastré, tête guidée latéralement.',
     construire() {
       const a = cNoeud(0, 0), b = cNoeud(0, 4);
       cBarre(a, b);
@@ -1897,8 +1897,8 @@ const MODELES_BASE = [
     }
   },
   {
-    cle: 'b-poteau-guide', nom: 'Poteau encastre - tete guidee',
-    aide: 'Pied encastre, tete guidee sans rotation (encastrement glissant) : longueur de flambement 0,5 l.',
+    cle: 'b-poteau-guide', nom: 'Poteau encastré - tête guidée',
+    aide: 'Pied encastré, tête guidée sans rotation (encastrement glissant) : longueur de flambement 0,5 l.',
     construire() {
       const a = cNoeud(0, 0), b = cNoeud(0, 4);
       cBarre(a, b);
@@ -1909,7 +1909,7 @@ const MODELES_BASE = [
   },
   {
     cle: 'b-poteau-semelle', nom: 'Poteau sur semelle souple',
-    aide: 'Pied retenu par un ressort en rotation (rotation de la fondation), tete libre.',
+    aide: 'Pied retenu par un ressort en rotation (rotation de la fondation), tête libre.',
     construire() {
       const a = cNoeud(0, 0), b = cNoeud(0, 4);
       cBarre(a, b);
@@ -1921,8 +1921,8 @@ const MODELES_BASE = [
     }
   },
   {
-    cle: 'b-portique-encastre', nom: 'Portique encastre',
-    aide: 'Pieds encastres, traverse chargee, force horizontale en tete.',
+    cle: 'b-portique-encastre', nom: 'Portique encastré',
+    aide: 'Pieds encastrés, traverse chargée, force horizontale en tête.',
     construire() {
       const a = cNoeud(0, 0), b = cNoeud(0, 4), c = cNoeud(8, 4), d = cNoeud(8, 0);
       cBarre(a, b); const t = cBarre(b, c); cBarre(c, d);
@@ -1934,8 +1934,8 @@ const MODELES_BASE = [
     }
   },
   {
-    cle: 'b-portique-articule', nom: 'Portique articule',
-    aide: 'Pieds articules, traverse chargee, force horizontale en tete.',
+    cle: 'b-portique-articule', nom: 'Portique articulé',
+    aide: 'Pieds articulés, traverse chargée, force horizontale en tête.',
     construire() {
       const a = cNoeud(0, 0), b = cNoeud(0, 4), c = cNoeud(8, 4), d = cNoeud(8, 0);
       cBarre(a, b); const t = cBarre(b, c); cBarre(c, d);
@@ -1947,8 +1947,8 @@ const MODELES_BASE = [
     }
   },
   {
-    cle: 'b-traverse-articulee', nom: 'Portique a traverse articulee',
-    aide: 'Poteaux encastres en pied, traverse articulee a ses deux extremites (rotules de barre).',
+    cle: 'b-traverse-articulee', nom: 'Portique à traverse articulée',
+    aide: 'Poteaux encastrés en pied, traverse articulée à ses deux extrémités (rotules de barre).',
     construire() {
       const a = cNoeud(0, 0), b = cNoeud(0, 4), c = cNoeud(8, 4), d = cNoeud(8, 0);
       cBarre(a, b); const t = cBarre(b, c, { rotuleA: true, rotuleB: true }); cBarre(c, d);
@@ -1961,7 +1961,7 @@ const MODELES_BASE = [
   },
   {
     cle: 'b-pendulaire', nom: 'Poutre sur appui pendulaire',
-    aide: 'Articulation fixe a gauche, bielle a droite : la bielle ne reprend que l effort dans son axe.',
+    aide: 'Articulation fixe à gauche, bielle à droite : la bielle ne reprend que l\'effort dans son axe.',
     construire() {
       const p = cPoutre([0, 6]);
       cAppui(p.ns[0], 'double'); cAppui(p.ns[1], 'pendule');
@@ -1970,8 +1970,8 @@ const MODELES_BASE = [
     }
   },
   {
-    cle: 'b-tassement', nom: 'Poutre continue, tassement d appui',
-    aide: 'Deux travees, deplacement impose de l appui central.',
+    cle: 'b-tassement', nom: 'Poutre continue, tassement d\'appui',
+    aide: 'Deux travées, déplacement imposé de l\'appui central.',
     construire() {
       const p = cPoutre([0, 6, 12]);
       cAppui(p.ns[0], 'double'); cAppui(p.ns[2], 'simple');
@@ -1980,8 +1980,8 @@ const MODELES_BASE = [
     }
   },
   {
-    cle: 'b-cadre', nom: 'Cadre ferme sur sol elastique',
-    aide: 'Dalot ou cadre enterre : radier sur ressorts, poussee des terres sur les voiles, charge sur la traverse.',
+    cle: 'b-cadre', nom: 'Cadre fermé sur sol élastique',
+    aide: 'Dalot ou cadre enterré : radier sur ressorts, poussée des terres sur les voiles, charge sur la traverse.',
     construire() {
       const a = cNoeud(0, 0), b = cNoeud(0, 3), c = cNoeud(4, 3), d = cNoeud(4, 0);
       const vg = cBarre(a, b), tr = cBarre(b, c), vd = cBarre(d, c), rad = cBarre(a, d);
@@ -1994,12 +1994,12 @@ const MODELES_BASE = [
       cTexte(4.3, -0.35, 'k_s', { taille: 12, couleur: COULEURS.texteDoux });
     }
   }
-].map(c => Object.assign(c, { groupe: 'Modeles de base' }));
+].map(c => Object.assign(c, { groupe: 'Modèles de base' }));
 
 const CAS = MODELES_BASE.concat([
   {
     cle: 'solive', nom: 'Poutre isostatique, G et Q',
-    aide: 'Solive ou panne sur deux appuis : charge permanente et exploitation empilees.',
+    aide: 'Solive ou panne sur deux appuis : charge permanente et exploitation empilées.',
     construire() {
       const p = cPoutre([0, 5]);
       cAppui(p.ns[0], 'double'); cAppui(p.ns[1], 'simple');
@@ -2009,7 +2009,7 @@ const CAS = MODELES_BASE.concat([
   },
   {
     cle: 'alternance', nom: 'Poutre continue, Q en alternance',
-    aide: 'Trois travees, G partout et Q sur les travees de rive : cas du moment maximal en travee 1 et 3.',
+    aide: 'Trois travées, G partout et Q sur les travées de rive : cas du moment maximal en travée 1 et 3.',
     construire() {
       const p = cPoutre([0, 5, 11, 16]);
       cAppui(p.ns[0], 'double');
@@ -2022,7 +2022,7 @@ const CAS = MODELES_BASE.concat([
   },
   {
     cle: 'linteau', nom: 'Linteau sous poteau',
-    aide: 'Charge repartie du mur et descente de charge d un poteau excentre, position cotee.',
+    aide: 'Charge répartie du mur et descente de charge d\'un poteau excentré, position cotée.',
     construire() {
       const p = cPoutre([0, 4.2]);
       cAppui(p.ns[0], 'double'); cAppui(p.ns[1], 'simple');
@@ -2034,7 +2034,7 @@ const CAS = MODELES_BASE.concat([
   },
   {
     cle: 'balcon', nom: 'Dalle de balcon en console',
-    aide: 'Console encastree, G et Q par metre de largeur, poussee horizontale sur le garde-corps.',
+    aide: 'Console encastrée, G et Q par mètre de largeur, poussée horizontale sur le garde-corps.',
     construire() {
       const a = cNoeud(0, 0), b = cNoeud(1.8, 0), c = cNoeud(1.8, 1.1);
       const m = cBarre(a, b);
@@ -2050,7 +2050,7 @@ const CAS = MODELES_BASE.concat([
   },
   {
     cle: 'gerber', nom: 'Poutre Gerber',
-    aide: 'Deux travees reliees par une rotule interne placee en travee : structure isostatique.',
+    aide: 'Deux travées reliées par une rotule interne placée en travée : structure isostatique.',
     construire() {
       const p = cPoutre([0, 8, 9.5, 14]);
       cAppui(p.ns[0], 'double'); cAppui(p.ns[1], 'simple');
@@ -2060,8 +2060,8 @@ const CAS = MODELES_BASE.concat([
     }
   },
   {
-    cle: 'escalier', nom: 'Volee d escalier',
-    aide: 'Paillasse inclinee : G par metre de volee, Q par metre de projection horizontale.',
+    cle: 'escalier', nom: 'Volée d\'escalier',
+    aide: 'Paillasse inclinée : G par mètre de volée, Q par mètre de projection horizontale.',
     construire() {
       const a = cNoeud(0, 0), b = cNoeud(3.6, 2.4);
       const m = cBarre(a, b);
@@ -2074,8 +2074,8 @@ const CAS = MODELES_BASE.concat([
     }
   },
   {
-    cle: 'hangar', nom: 'Portique a deux versants',
-    aide: 'Hangar a pieds articules : neige sur les versants, vent en pression et en succion sur les poteaux.',
+    cle: 'hangar', nom: 'Portique à deux versants',
+    aide: 'Hangar à pieds articulés : neige sur les versants, vent en pression et en succion sur les poteaux.',
     construire() {
       const a = cNoeud(0, 0), b = cNoeud(0, 6), s = cNoeud(10, 8), d = cNoeud(20, 6), e = cNoeud(20, 0);
       const p1 = cBarre(a, b), r1 = cBarre(b, s), r2 = cBarre(s, d), p2 = cBarre(d, e);
@@ -2090,8 +2090,8 @@ const CAS = MODELES_BASE.concat([
     }
   },
   {
-    cle: 'etages', nom: 'Portique a deux niveaux',
-    aide: 'Ossature encastree en pied : planchers en G et Q, forces horizontales de niveau (vent ou seisme).',
+    cle: 'etages', nom: 'Portique à deux niveaux',
+    aide: 'Ossature encastrée en pied : planchers en G et Q, forces horizontales de niveau (vent ou séisme).',
     construire() {
       const a = cNoeud(0, 0), b = cNoeud(0, 3.5), c = cNoeud(0, 7);
       const d = cNoeud(6, 0), e = cNoeud(6, 3.5), f = cNoeud(6, 7);
@@ -2108,8 +2108,8 @@ const CAS = MODELES_BASE.concat([
     }
   },
   {
-    cle: 'ferme', nom: 'Ferme a treillis',
-    aide: 'Treillis Pratt a membrures paralleles, charges aux noeuds de la membrure superieure.',
+    cle: 'ferme', nom: 'Ferme à treillis',
+    aide: 'Treillis Pratt à membrures parallèles, charges aux nœuds de la membrure supérieure.',
     construire() {
       const n = 6, pas = 2, h = 1.5;
       const bas = [], haut = [];
@@ -2128,8 +2128,8 @@ const CAS = MODELES_BASE.concat([
     }
   },
   {
-    cle: 'mur', nom: 'Mur de soutenement',
-    aide: 'Voile encastre en pied : poussee des terres triangulaire et poussee due a la surcharge.',
+    cle: 'mur', nom: 'Mur de soutènement',
+    aide: 'Voile encastré en pied : poussée des terres triangulaire et poussée due à la surcharge.',
     construire() {
       const a = cNoeud(0, 0), b = cNoeud(0, 4);
       const m = cBarre(a, b, { epaisseur: 3 });
@@ -2144,8 +2144,8 @@ const CAS = MODELES_BASE.concat([
     }
   },
   {
-    cle: 'poteau', nom: 'Poteau bi-articule',
-    aide: 'Effort normal et moment de tete, tete guidee lateralement : schema de flambement.',
+    cle: 'poteau', nom: 'Poteau bi-articulé',
+    aide: 'Effort normal et moment de tête, tête guidée latéralement : schéma de flambement.',
     construire() {
       const a = cNoeud(0, 0), b = cNoeud(0, 5);
       cBarre(a, b, { etiquette: 'l_0' });
@@ -2156,8 +2156,8 @@ const CAS = MODELES_BASE.concat([
     }
   },
   {
-    cle: 'longrine', nom: 'Longrine sur appuis elastiques',
-    aide: 'Poutre de fondation sur pieux modelises en ressorts, descentes de charge des poteaux.',
+    cle: 'longrine', nom: 'Longrine sur appuis élastiques',
+    aide: 'Poutre de fondation sur pieux modélisés en ressorts, descentes de charge des poteaux.',
     construire() {
       const p = cPoutre([0, 3.5, 7, 10.5]);
       for (const n of p.ns) cAppui(n, 'ressort');
@@ -2181,7 +2181,7 @@ function chargerCas(cle) {
   sel = null; enCours = null;
   cas.construire();
   ajuster(); construirePanneau(); sauverLocal();
-  indice('Cas charge : ' + cas.nom + '. Valeurs indicatives, a remplacer.');
+  indice('Cas chargé : ' + cas.nom + '. Valeurs indicatives, à remplacer.');
 }
 
 /* -------------------------- mes modeles --------------------------- *
@@ -2208,24 +2208,24 @@ function ecrireModeles(liste) {
     localStorage.setItem(CLE_MODELES, JSON.stringify(liste));
     return true;
   } catch (e) {
-    indice('Stockage local indisponible : exportez la bibliotheque pour ne pas perdre ce modele.');
+    indice('Stockage local indisponible : exportez la bibliothèque pour ne pas perdre ce modèle.');
     return false;
   }
 }
 
 function enregistrerModele(nom) {
   nom = String(nom || '').trim();
-  if (!nom) { indice('Donnez un nom au modele.'); return; }
-  if (!etat.noeuds.length) { indice('Le dessin est vide : rien a enregistrer.'); return; }
+  if (!nom) { indice('Donnez un nom au modèle.'); return; }
+  if (!etat.noeuds.length) { indice('Le dessin est vide : rien à enregistrer.'); return; }
   const liste = lireModeles();
   const i = liste.findIndex(m => m.nom === nom);
-  if (i >= 0 && !confirm('Remplacer le modele « ' + nom + ' » ?')) return;
+  if (i >= 0 && !confirm('Remplacer le modèle « ' + nom + ' » ?')) return;
   const m = { nom: nom, date: new Date().toISOString().slice(0, 10), etat: JSON.parse(JSON.stringify(etat)) };
   if (i >= 0) liste[i] = m; else liste.push(m);
   if (ecrireModeles(liste)) {
     modeleChoisi = nom;
     construirePanneau();
-    indice('Modele « ' + nom + ' » enregistre.');
+    indice('Modèle « ' + nom + ' » enregistré.');
   }
 }
 
@@ -2236,11 +2236,11 @@ function chargerModele(nom) {
   etat = Object.assign(modeleVide(), JSON.parse(JSON.stringify(m.etat)));
   sel = null; enCours = null;
   ajuster(); construirePanneau(); sauverLocal();
-  indice('Modele « ' + nom + ' » charge : le modele enregistre reste intact.');
+  indice('Modèle « ' + nom + ' » chargé : le modèle enregistré reste intact.');
 }
 
 function supprimerModele(nom) {
-  if (!nom || !confirm('Supprimer le modele « ' + nom + ' » de ce navigateur ?')) return;
+  if (!nom || !confirm('Supprimer le modèle « ' + nom + ' » de ce navigateur ?')) return;
   ecrireModeles(lireModeles().filter(m => m.nom !== nom));
   modeleChoisi = '';
   construirePanneau();
@@ -2248,7 +2248,7 @@ function supprimerModele(nom) {
 
 function exporterBibliotheque() {
   const liste = lireModeles();
-  if (!liste.length) { indice('Aucun modele a exporter.'); return; }
+  if (!liste.length) { indice('Aucun modèle à exporter.'); return; }
   telecharger('modeles-schema.json',
     JSON.stringify({ format: FORMAT_BIBLIOTHEQUE, modeles: liste }, null, 1), 'application/json');
 }
@@ -2263,7 +2263,7 @@ function importerBibliotheque(d) {
     if (i >= 0) liste[i] = m; else liste.push(m);
     n++;
   }
-  if (ecrireModeles(liste)) { construirePanneau(); indice(n + ' modele(s) importe(s) dans la bibliotheque.'); }
+  if (ecrireModeles(liste)) { construirePanneau(); indice(n + ' modèle(s) importé(s) dans la bibliothèque.'); }
 }
 
 /* ----------------------- tableau des charges ---------------------- */
@@ -2275,7 +2275,7 @@ function panneauCharges() {
     const trapeze = c.genre === 'repartie' && c.w1 !== c.w2;
     const unite = c.unite || (c.genre === 'repartie' ? 'kN/m' : c.genre === 'moment' ? 'kN.m' : 'kN');
     h += '<input type="text" data-charge="' + c.id + '" data-champ="etiquette" value="' + echappe(c.etiquette || '') +
-      '" placeholder="' + (c.genre === 'repartie' ? 'repartie' : c.genre) + '">';
+      '" placeholder="' + (c.genre === 'repartie' ? 'répartie' : c.genre) + '">';
     if (trapeze) {
       h += '<input type="number" step="0.5" data-charge="' + c.id + '" data-champ="w1" value="' + c.w1 + '" title="w1">' +
         '<input type="number" step="0.5" data-charge="' + c.id + '" data-champ="w2" value="' + c.w2 + '" title="w2">';
@@ -2286,7 +2286,7 @@ function panneauCharges() {
     }
     h += '<span>' + echappe(unite) + '</span>';
   }
-  return h + '</div><p class="aide">Pour decliner un modele : changez ici noms et valeurs, puis exportez.</p>';
+  return h + '</div><p class="aide">Pour décliner un modèle : changez ici noms et valeurs, puis exportez.</p>';
 }
 
 function brancherCharges(p) {
@@ -2391,7 +2391,7 @@ document.getElementById('b-png').onclick = () => {
     URL.revokeObjectURL(url);
     c.toBlob(b => telecharger('schema.png', b, 'image/png'));
   };
-  img.onerror = () => { URL.revokeObjectURL(url); indice('Export PNG impossible : utilisez l export SVG.'); };
+  img.onerror = () => { URL.revokeObjectURL(url); indice('Export PNG impossible : utilisez l\'export SVG.'); };
   img.src = url;
 };
 
@@ -2412,7 +2412,7 @@ document.getElementById('fichier').onchange = ev => {
       memoriser();
       etat = Object.assign(modeleVide(), d);
       sel = null; ajuster(); construirePanneau(); sauverLocal();
-      indice('Fichier charge.');
+      indice('Fichier chargé.');
     } catch (e) {
       indice('Fichier illisible : ' + e.message);
     }
