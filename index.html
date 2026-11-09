@@ -38,7 +38,7 @@ body {
   color: var(--texte);
   background: var(--fond);
   display: grid;
-  grid-template-rows: auto 1fr auto;
+  grid-template-rows: auto auto 1fr auto;
   font-size: 14px;
 }
 header {
@@ -63,7 +63,11 @@ button, select, input {
 .bouton:active { background: var(--bordure-douce); }
 .bouton.principal { background: var(--accent); border-color: var(--accent); color: #fff; }
 .bouton.principal:hover { filter: brightness(1.08); }
-main { display: grid; grid-template-columns: 112px 1fr 268px; min-height: 0; }
+header { grid-row: 1; }
+.feuilles { grid-row: 2; padding: 6px 14px 0; }
+.feuilles:empty { display: none; }
+main { grid-row: 3; display: grid; grid-template-columns: 112px 1fr 268px; min-height: 0; }
+footer { grid-row: 4; }
 #rail {
   background: var(--surface); border-right: 1px solid var(--bordure);
   padding: 8px; display: flex; flex-direction: column; gap: 4px; overflow: auto;
@@ -149,6 +153,9 @@ footer .coord { font-family: var(--mono); }
   </div>
   <input type="file" id="fichier" accept="application/json" hidden>
 </header>
+
+<!-- Barre des feuilles de calcul (projets de la suite, aedificium-ui) -->
+<div class="feuilles" data-role="feuilles"></div>
 
 <main>
   <nav id="rail"></nav>
@@ -279,8 +286,22 @@ function retablir() {
 }
 
 function sauverLocal() {
+  const barre = globalThis.aedBarre;
+  if (barre && barre.dansUnProjet()) { barre.signaler(); return; }
   try { localStorage.setItem('schema-statique:auto', JSON.stringify(etat)); } catch (e) { /* stockage indisponible */ }
 }
+
+/* Lien avec la barre des feuilles (feuilles/brancher.js) : la feuille est `etat`. */
+globalThis.aedSchema = {
+  lire() { return JSON.parse(JSON.stringify(etat)); },
+  charger(d) {
+    etat = Object.assign(modeleVide(), d === null ? {} : JSON.parse(JSON.stringify(d)));
+    // Annuler ne doit pas ramener le dessin d'une autre feuille.
+    pile.length = 0; pileRefaire.length = 0;
+    sel = null; enCours = null;
+    ajuster(); construirePanneau();
+  },
+};
 
 function chargerLocal() {
   try {
@@ -2448,5 +2469,6 @@ construirePanneau();
 ajuster();
 indice(AIDE.select);
 </script>
+<script type="module" src="feuilles/brancher.js"></script>
 </body>
 </html>
