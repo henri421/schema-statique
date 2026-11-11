@@ -33,6 +33,13 @@ jobs:
           "
           node --check verification.js
           rm verification.js
+      # Publication conditionnee aux tests (audit du 10/11/2026, I7).
+      - name: Tests
+        run: |
+          for f in tests/*.test.mjs; do
+            echo "== $f"
+            node "$f"
+          done
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
